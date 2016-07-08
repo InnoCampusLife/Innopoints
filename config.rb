@@ -8,3 +8,5 @@ DB_HOST = 'localhost'
 DB_PORT = '27017'
 
 DATABASE = 'innopoints'
+
+DEFAULT_LIMIT = 20
