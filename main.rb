@@ -3,7 +3,6 @@ require 'mongo'
 require 'json'
 require 'fileutils'
 require 'httparty'
-require 'active_support'
 require_relative 'config'
 set :public_folder => '/public'
 
