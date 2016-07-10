@@ -45,7 +45,7 @@ helpers do
     # end
     #
     # resp
-    resp.body
+    JSON.parse(resp.body, symbolize_names: true)
   end
 
   def generate_response(status, result)
