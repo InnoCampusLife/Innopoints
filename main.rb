@@ -30,22 +30,22 @@ helpers do
   end
 
   def is_token_valid(token)
-    # resp = HTTParty.get(ACCOUNTS_URL + token)
-    resp = Hash.new
-    if token == 'test'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 1
-    elsif token == 'admin'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 2
-    else
-      resp[:status] = 'error'
-    end
-
-    resp
-    # resp.body
+    resp = HTTParty.get(ACCOUNTS_URL + token)
+    # resp = Hash.new
+    # if token == 'test'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 1
+    # elsif token == 'admin'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 2
+    # else
+    #   resp[:status] = 'error'
+    # end
+    #
+    # resp
+    resp.body
   end
 
   def generate_response(status, result)
