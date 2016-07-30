@@ -6,6 +6,9 @@ require 'httparty'
 require_relative 'config'
 set :public_folder => '/public'
 
+set :bind, WEB_HOST
+set :port, WEB_PORT
+
 helpers do
   def create_transaction(amount)
     date = Date.today >> 12
@@ -57,7 +60,7 @@ helpers do
 end
 
 configure do
-  db = Mongo::Client.new([ "#{DB_HOST}:#{DB_PORT}" ], :database => DATABASE)
+  db = Mongo::Client.new([ DB_URL ], :database => DB_NAME)
   set :database, db
 end
 
