@@ -6,6 +6,9 @@ require_relative 'config'
 Dir["models/*.rb"].each {|file| require_relative file }
 set :public_folder => '/public'
 
+set :bind, WEB_HOST
+set :port, WEB_PORT
+
 SERVER_ERROR_CODE = 500
 CLIENT_ERROR_CODE = 400
 SUCCESSFUL_RESPONSE_CODE = 200
@@ -58,24 +61,24 @@ helpers do
   end
 
   def is_token_valid(token)
-    # resp = HTTParty.get(ACCOUNTS_URL + token)
-    resp = Hash.new
-    if token == 'test'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 1
-      resp[:result][:role] = 'student'
-    elsif token == 'admin'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 2
-      resp[:result][:role] = 'moderator'
-    else
-      resp[:status] = 'error'
-    end
-
-    resp
-    # JSON.parse(resp.body, symbolize_names: true)
+    resp = HTTParty.get(ACCOUNTS_URL + token)
+    # resp = Hash.new
+    # if token == 'test'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 1
+    #   resp[:result][:role] = 'student'
+    # elsif token == 'admin'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 2
+    #   resp[:result][:role] = 'moderator'
+    # else
+    #   resp[:status] = 'error'
+    # end
+    #
+    # resp
+    JSON.parse(resp.body, symbolize_names: true)
   end
 
   def is_activity_correct(activity_id, price)

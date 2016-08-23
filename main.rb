@@ -6,6 +6,13 @@ require 'httparty'
 require_relative 'config'
 set :public_folder => '/public'
 
+set :bind, WEB_HOST
+set :port, WEB_PORT
+
+SERVER_ERROR_CODE = 500
+CLIENT_ERROR_CODE = 400
+SUCCESSFUL_RESPONSE_CODE = 200
+
 helpers do
   def create_transaction(amount)
     date = Date.today >> 12
@@ -48,16 +55,18 @@ helpers do
     JSON.parse(resp.body, symbolize_names: true)
   end
 
-  def generate_response(status, result)
+  def generate_response(status, result, error, status_code)
+    status status_code
     resp = Hash.new
     resp[:status] = status
     resp[:result] = result
+    resp[:error] = error
     resp.to_json
   end
 end
 
 configure do
-  db = Mongo::Client.new([ "#{DB_HOST}:#{DB_PORT}" ], :database => DATABASE)
+  db = Mongo::Client.new([ DB_URL ], :database => DB_NAME)
   set :database, db
 end
 
@@ -83,6 +92,7 @@ Response:
     ]
   }
 =end
+
 get URL + '/activities' do
   content_type :json
   skip = params[:skip]
@@ -110,7 +120,7 @@ get URL + '/activities' do
     activity[:category][:_id] = activity[:category][:_id].to_s
     activities.push(activity)
   end
-  generate_response('ok', activities)
+  generate_response('ok', activities, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
 =begin
@@ -158,7 +168,7 @@ get URL + '/activities/:category_id' do
   activities = Array.new
   category_bson_id = get_bson_id(params[:category_id])
   if category_bson_id.nil?
-    return generate_response('error', { decriprion: 'WRONG CATEGORY ID' })
+    return generate_response('fail', nil, 'WRONG CATEGORY ID', CLIENT_ERROR_CODE)
   end
   settings.database[:activities].find({'category._id' => category_bson_id}).skip(skip).limit(limit).each do |document|
     activity = document
@@ -166,7 +176,7 @@ get URL + '/activities/:category_id' do
     activity[:category][:_id] = activity[:category][:_id].to_s
     activities.push(activity)
   end
-  generate_response('ok', activities)
+  generate_response('ok', activities, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
 =begin
@@ -211,7 +221,7 @@ get URL + '/categories' do
     category[:_id] = category[:_id].to_s
     categories.push(category)
   end
-  generate_response('ok', categories)
+  generate_response('ok', categories, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
 =begin
@@ -243,15 +253,15 @@ get URL + '/accounts/:token' do
         break
       end
       if account.nil?
-        generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+        generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE )
       else
-        generate_response('ok', { :owner => id, :type => 'admin' })
+        generate_response('ok', { :owner => id, :type => 'admin' }, nil, SUCCESSFUL_RESPONSE_CODE)
       end
     else
-      generate_response('ok', { :owner => id, :type => 'student' , :points_amount => account[:points_amount] })
+      generate_response('ok', { :owner => id, :type => 'student' , :points_amount => account[:points_amount] }, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -284,15 +294,15 @@ post URL + '/accounts/:token' do
           break
         end
         FileUtils::mkdir_p(Dir.pwd + FILES_FOLDER + '/' + account[:_id])
-        generate_response('ok', { :owner => id, :points_amount => 0 })
+        generate_response('ok', { :owner => id, :points_amount => 0 }, nil, SUCCESSFUL_RESPONSE_CODE)
       else
-        generate_response('error', { :description => 'INTERNAL ERROR' })
+        generate_response('fail', nil, 'INTERNAL ERROR', SERVER_ERROR_CODE)
       end
     else
-      generate_response('error', { :description => 'ACCOUNT ALREADY EXISTS' })
+      generate_response('fail', nil, 'ACCOUNT ALREADY EXISTS', SERVER_ERROR_CODE)
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST' , SERVER_ERROR_CODE)
   end
 end
 =begin
@@ -385,7 +395,7 @@ post URL + '/accounts/:token/applications' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       #Todo rework to dynamic
       case application[:type]
@@ -396,7 +406,7 @@ post URL + '/accounts/:token/applications' do
             actual_activity = document
           end
           if actual_activity.nil? || actual_activity[:price] != activity[:price]
-            return generate_response('error', { :description => 'ERROR IN ACTIVITY' })
+            return generate_response('fail', nil, 'ERROR IN ACTIVITY', CLIENT_ERROR_CODE)
           end
         when 'group'
           application[:group][:work].each do |work|
@@ -406,7 +416,7 @@ post URL + '/accounts/:token/applications' do
               actual_activity = document
             end
             if actual_activity.nil? || actual_activity[:price] != activity[:price]
-              return generate_response('error', { :description => 'ERROR IN ACTIVITY' })
+              return generate_response('fail', nil, 'ERROR IN ACTIVITY', CLIENT_ERROR_CODE)
             end
           end
       end
@@ -439,13 +449,13 @@ post URL + '/accounts/:token/applications' do
       result = settings.database[:accounts].update_one({:owner => id}, {'$set' => {applications: account[:applications]}})
       if result.n == 1
         settings.database[:applications_in_work].insert_one({:author => application[:author], :application_id => application_id.to_s, :status => 'in_process'})
-        generate_response('ok', { :_id => application_id.to_s })
+        generate_response('ok', { :_id => application_id.to_s }, nil, SUCCESSFUL_RESPONSE_CODE)
       else
-        generate_response('error', { :description => 'INTERNAL ERROR' })
+        generate_response('fail', nil, 'INTERNAL ERROR', SERVER_ERROR_CODE)
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -482,7 +492,7 @@ get URL + '/accounts/:token/applications' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       applications = Array.new
       begin
@@ -516,10 +526,10 @@ get URL + '/accounts/:token/applications' do
                           })
         counter += 1
       end
-      generate_response('ok', applications)
+      generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 =begin
@@ -555,7 +565,7 @@ get URL + '/accounts/:token/applications/in_process' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       applications = Array.new
       begin
@@ -591,10 +601,10 @@ get URL + '/accounts/:token/applications/in_process' do
           counter += 1
         end
       end
-      generate_response('ok', applications )
+      generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 =begin
@@ -630,7 +640,7 @@ get URL + '/accounts/:token/applications/rework' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       applications = Array.new
       begin
@@ -666,10 +676,10 @@ get URL + '/accounts/:token/applications/rework' do
           counter += 1
         end
       end
-      generate_response('ok', applications )
+      generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE  )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -706,7 +716,7 @@ get URL + '/accounts/:token/applications/approved' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       applications = Array.new
       begin
@@ -742,10 +752,10 @@ get URL + '/accounts/:token/applications/approved' do
           counter += 1
         end
       end
-      generate_response('ok', applications )
+      generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE  )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -782,7 +792,7 @@ get URL + '/accounts/:token/applications/rejected' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       applications = Array.new
       begin
@@ -818,10 +828,10 @@ get URL + '/accounts/:token/applications/rejected' do
           counter += 1
         end
       end
-      generate_response('ok', applications )
+      generate_response('ok', applications , nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -878,7 +888,7 @@ get URL + '/accounts/:token/applications/:application_id' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       application = nil
       account[:applications].each do |app|
@@ -887,14 +897,14 @@ get URL + '/accounts/:token/applications/:application_id' do
         end
       end
       if application.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST', SERVER_ERROR_CODE)
       else
         application[:_id] = application[:_id].to_s
-        generate_response('ok', application)
+        generate_response('ok', application, nil, SUCCESSFUL_RESPONSE_CODE )
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -917,7 +927,7 @@ get URL + '/accounts/:account_id/applications/:application_id/files/:file_id' do
       break
     end
     if account.nil?
-      return generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      return generate_response('fail', nil,'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
   end
     application = nil
@@ -927,7 +937,7 @@ get URL + '/accounts/:account_id/applications/:application_id/files/:file_id' do
       end
     end
     if application.nil?
-      generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+      generate_response('fail', nil,'APPLICATION DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       file = nil
       application[:files].each do |f|
@@ -936,13 +946,13 @@ get URL + '/accounts/:account_id/applications/:application_id/files/:file_id' do
         end
       end
       if file.nil?
-        generate_response('error', { :description => 'FILE DOES NOT EXIST' })
+        generate_response('fail', nil,'FILE DOES NOT EXIST', SERVER_ERROR_CODE)
       else
         file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + account[:_id] + '/' + application[:_id] + '/' + params[:file_id]
         if File.exists?(file_url)
           send_file file_url, :filename => file[:filename], :type => 'Application/octet-stream'
         else
-          generate_response('error', { :description => 'FILE DOES NOT EXIST ON SERVER' })
+          generate_response('fail', nil,'FILE DOES NOT EXIST ON SERVER', SERVER_ERROR_CODE)
         end
       end
     end
@@ -971,7 +981,7 @@ delete URL + '/accounts/:token/applications/:application_id' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil,'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       application = nil
       account[:applications].each do |app|
@@ -980,7 +990,7 @@ delete URL + '/accounts/:token/applications/:application_id' do
         end
       end
       if application.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST OR IT IS NOT POSSIBLE TO DELETE' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST OR IT IS NOT POSSIBLE TO DELETE', SERVER_ERROR_CODE)
       else
         settings.database[:accounts].update_one({owner: id}, {'$set' => {applications: account[:applications]}})
         if application[:status] == 'in_process' || application[:status] == 'rework'
@@ -992,11 +1002,11 @@ delete URL + '/accounts/:token/applications/:application_id' do
             item.remove
           end
         end
-        generate_response('ok', { :description => 'APPLICATION WAS DELETED' })
+        generate_response('ok', { :description => 'APPLICATION WAS DELETED' }, nil, SUCCESSFUL_RESPONSE_CODE )
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1074,7 +1084,7 @@ put URL + '/accounts/:token/applications/:application_id' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil,'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       app = nil
       account[:applications].each do |item|
@@ -1084,7 +1094,7 @@ put URL + '/accounts/:token/applications/:application_id' do
         end
       end
       if app.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST', SERVER_ERROR_CODE)
       else
         case app[:type]
           when 'personal'
@@ -1094,7 +1104,7 @@ put URL + '/accounts/:token/applications/:application_id' do
               actual_activity = document
             end
             if actual_activity.nil? || actual_activity[:price] != activity[:price]
-              return generate_response('error', { :description => 'ERROR IN ACTIVITY' })
+              return generate_response('fail', nil,'ERROR IN ACTIVITY', SERVER_ERROR_CODE)
             end
             app[:personal] = application[:personal]
           when 'group'
@@ -1105,7 +1115,7 @@ put URL + '/accounts/:token/applications/:application_id' do
                 actual_activity = document
               end
               if actual_activity.nil? || actual_activity[:price] != activity[:price]
-                return generate_response('error', { :description => 'ERROR IN ACTIVITY' })
+                return generate_response('fail', nil,'ERROR IN ACTIVITY', SERVER_ERROR_CODE)
               end
             end
             app[:group] = application[:group]
@@ -1160,14 +1170,14 @@ put URL + '/accounts/:token/applications/:application_id' do
         end
         result = settings.database[:accounts].update_one({owner: id}, {'$set' => {applications: account[:applications]}})
         if result.n == 1
-          generate_response('ok', { _id: app[:_id].to_s })
+          generate_response('ok', { _id: app[:_id].to_s }, nil, SUCCESSFUL_RESPONSE_CODE )
         else
-          generate_response('error', { :description => 'INTERNAL ERROR' })
+          generate_response('fail', nil,'INTERNAL ERROR', SERVER_ERROR_CODE)
         end
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1194,7 +1204,7 @@ put URL + '/accounts/:token/applications/:application_id/approve' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil,'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       application = nil
       account[:applications].each do |app|
@@ -1203,19 +1213,19 @@ put URL + '/accounts/:token/applications/:application_id/approve' do
         end
       end
       if application.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST', SERVER_ERROR_CODE)
       else
         if application[:status] != 'rework'
-          return generate_response('error', { :description => 'IT IS NOT POSSIBLE TO SEND TO APPROVE THE APPLICATION' })
+          return generate_response('fail', nil,'IT IS NOT POSSIBLE TO SEND TO APPROVE THE APPLICATION', CLIENT_ERROR_CODE)
         end
         application[:status] = 'in_process'
         settings.database[:accounts].update_one({:owner => account[:owner]}, {'$set' => {:applications => account[:applications]}})
         settings.database[:applications_in_work].update_one({application_id: application[:_id].to_s}, {'$set' => {status: 'in_process'}})
-        generate_response('ok', { :description => 'APPLICATIONS IS SENT FOR APPROVAL' })
+        generate_response('ok', { :description => 'APPLICATIONS IS SENT FOR APPROVAL' }, nil, SUCCESSFUL_RESPONSE_CODE )
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 #---------------------- Administrator API ---------------------------
@@ -1251,7 +1261,7 @@ get URL + '/admin/:admin_token/accounts' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       accounts = Array.new
       begin
@@ -1273,10 +1283,10 @@ get URL + '/admin/:admin_token/accounts' do
       settings.database[:accounts].find().skip(skip).limit(limit).each do |document|
         accounts.push({_id: document[:_id].to_s ,:owner => document[:owner], :points_amount => document[:points_amount]})
       end
-      generate_response('ok', accounts)
+      generate_response('ok', accounts, nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1304,7 +1314,7 @@ get URL + '/admin/:admin_token/accounts/:account_id' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,)
     else
       target_account = nil
       settings.database[:accounts].find(:_id => BSON::ObjectId(params[:account_id])).each do |document|
@@ -1312,17 +1322,17 @@ get URL + '/admin/:admin_token/accounts/:account_id' do
         break
       end
       if target_account.nil?
-        generate_response('error', { :description => 'TARGET USER DOES NOT EXIST' })
+        generate_response('fail', nil,'TARGET USER DOES NOT EXIST', SERVER_ERROR_CODE)
       else
         result = Hash.new
         result[:_id] = target_account[:_id].to_s
         result[:owner] = target_account[:owner]
         result[:points_amount] = target_account[:points_amount]
-        generate_response('ok', result)
+        generate_response('ok', result, nil, SUCCESSFUL_RESPONSE_CODE )
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1352,17 +1362,17 @@ put URL + '/admin/:admin_token/accounts/:account_id' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       result = settings.database[:accounts].update_one({:_id => BSON::ObjectId(params[:account_id])}, {'$set' => {:points_amount => params[:points_amount]}})
       if result.n == 1
-        generate_response('ok', { :description => 'POINTS AMOUNT WAS UPDATED' })
+        generate_response('ok', { :description => 'POINTS AMOUNT WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE )
       else
-        generate_response('error', { :description => 'INTERNAL ERROR' })
+        generate_response('fail', nil,'INTERNAL ERROR', SERVER_ERROR_CODE)
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1402,7 +1412,7 @@ get URL + '/admin/:admin_token/applications/in_process' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       begin
         skip = Integer(skip)
@@ -1448,10 +1458,10 @@ get URL + '/admin/:admin_token/applications/in_process' do
           end
         end
       end
-      generate_response('ok',  applications)
+      generate_response('ok',  applications, nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1491,7 +1501,7 @@ get URL + '/admin/:admin_token/applications/rework' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       begin
         skip = Integer(skip)
@@ -1534,10 +1544,10 @@ get URL + '/admin/:admin_token/applications/rework' do
           end
         end
       end
-      generate_response('ok',  applications)
+      generate_response('ok',  applications, nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1577,7 +1587,7 @@ get URL + '/admin/:admin_token/applications/approved' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       begin
         skip = Integer(skip)
@@ -1623,10 +1633,10 @@ get URL + '/admin/:admin_token/applications/approved' do
           end
         end
       end
-      generate_response('ok',  applications)
+      generate_response('ok',  applications, nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1666,7 +1676,7 @@ get URL + '/admin/:admin_token/applications/rejected' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       begin
         skip = Integer(skip)
@@ -1712,10 +1722,10 @@ get URL + '/admin/:admin_token/applications/rejected' do
           end
         end
       end
-      generate_response('ok',  applications)
+      generate_response('ok',  applications, nil, SUCCESSFUL_RESPONSE_CODE )
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1801,10 +1811,10 @@ post URL + '/admin/:admin_token/applications' do
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'ACCOUNT DOES NOT EXIST' })
+      generate_response('fail', nil,'ACCOUNT DOES NOT EXIST', SERVER_ERROR_CODE)
     else
       if application[:type] == 'personal'
-        return generate_response('error', { :description => 'ADMIN CAN\'T CREATE PERSONAL APPLICATIONS' })
+        return generate_response('fail', nil,'ADMIN CAN\'T CREATE PERSONAL APPLICATIONS', SERVER_ERROR_CODE)
       end
       #Todo rework to dynamic
       application[:author] = id
@@ -1837,7 +1847,7 @@ post URL + '/admin/:admin_token/applications' do
       if result.n == 1
         case application[:type]
           when 'personal'
-             return generate_response('error', { description: 'ADMIN CAN\'T CREATE PERSONAL APPLICATION' })
+             return generate_response('fail', nil, 'ADMIN CAN\'T CREATE PERSONAL APPLICATION', CLIENT_ERROR_CODE)
           when 'group'
             accounts_to_update = Array.new
             application[:group][:work].each do |work|
@@ -1846,7 +1856,7 @@ post URL + '/admin/:admin_token/applications' do
                 actor = document
               end
               if actor.nil?
-                return generate_response('error', { :description => 'ACTOR DOES NOT EXIST'})
+                return generate_response('fail', nil,'ACTOR DOES NOT EXIST', SERVER_ERROR_CODE)
               end
               amount = nil
               if work[:activity][:type] == 'permanent'
@@ -1864,13 +1874,13 @@ post URL + '/admin/:admin_token/applications' do
             end
             settings.database[:applications_archive].insert_one({author: id, application_id: application_id.to_s, status: 'approved'})
         end
-        generate_response('ok', { :_id => application_id.to_s })
+        generate_response('ok', { :_id => application_id.to_s }, nil, SUCCESSFUL_RESPONSE_CODE )
       else
-        generate_response('error', { :description => 'INTERNAL ERROR' })
+        generate_response('fail', nil,'INTERNAL ERROR', SERVER_ERROR_CODE)
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -1918,12 +1928,12 @@ get URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER', SERVER_ERROR_CODE)
     else
       target_account = nil
       account_bson_id = get_bson_id(params[:account_id])
       if account_bson_id.nil?
-        return generate_response('error', { :description => 'WRONG ACCOUNT ID' })
+        return generate_response('fail', nil,'WRONG ACCOUNT ID', CLIENT_ERROR_CODE)
       end
       settings.database[:administrators].find(:_id => account_bson_id).each do |document|
         target_account = document
@@ -1932,14 +1942,14 @@ get URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
       if target_account.nil?
         account_bson_id = get_bson_id(params[:account_id])
         if account_bson_id.nil?
-          return generate_response('error', { :description => 'WRONG ACCOUNT ID' })
+          return generate_response('fail', nil,'WRONG ACCOUNT ID', CLIENT_ERROR_CODE)
         end
         settings.database[:accounts].find(:_id => account_bson_id).each do |document|
           target_account = document
           break
         end
         if target_account.nil?
-          return generate_response('error', { :description => 'TARGET USER DOES NOT EXIST' })
+          return generate_response('fail', nil,'TARGET USER DOES NOT EXIST', SERVER_ERROR_CODE)
         end
       end
       application = nil
@@ -1950,14 +1960,14 @@ get URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
         end
       end
       if application.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST', SERVER_ERROR_CODE)
       else
         application[:_id] = application[:_id].to_s
-        generate_response('ok', application)
+        generate_response('ok', application, nil, SUCCESSFUL_RESPONSE_CODE )
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST', SERVER_ERROR_CODE)
   end
 end
 
@@ -2037,13 +2047,13 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER' , SERVER_ERROR_CODE)
     else
       target_account = nil
       target_database = nil
       account_bson_id = get_bson_id(params[:account_id])
       if account_bson_id.nil?
-        return generate_response('error', { :description => 'WRONG ACCOUNT ID' })
+        return generate_response('fail', nil,'WRONG ACCOUNT ID' , CLIENT_ERROR_CODE)
       end
       settings.database[:administrators].find(:_id => account_bson_id).each do |document|
         target_account = document
@@ -2057,7 +2067,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
         end
       end
       if target_account.nil?
-        return generate_response('error', { :description => 'TARGET USER DOES NOT EXIST' })
+        return generate_response('fail', nil,'TARGET USER DOES NOT EXIST' , SERVER_ERROR_CODE)
       end
       app = nil
       target_account[:applications].each do |item|
@@ -2067,7 +2077,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
         end
       end
       if app.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST' , SERVER_ERROR_CODE)
       else
         case app[:type]
           when 'personal'
@@ -2075,13 +2085,13 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
             actual_activity = nil
             activity_bson_id = get_bson_id(activity[:_id])
             if activity_bson_id.nil?
-              return generate_response('error', { :description => 'WRONG ACTIVITY ID' })
+              return generate_response('fail', nil,'WRONG ACTIVITY ID' , CLIENT_ERROR_CODE)
             end
             settings.database[:activities].find(:_id => activity_bson_id).each do |document|
               actual_activity = document
             end
             if actual_activity.nil? || actual_activity[:price] != activity[:price]
-              return generate_response('error', { :description => 'ERROR IN ACTIVITY' })
+              return generate_response('fail', nil,'ERROR IN ACTIVITY' , CLIENT_ERROR_CODE)
             end
             app[:personal] = application[:personal]
           when 'group'
@@ -2090,13 +2100,13 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
               actual_activity = nil
               activity_bson_id = get_bson_id(activity[:_id])
               if activity_bson_id.nil?
-                return generate_response('error', { :description => 'WRONG ACTIVITY ID' })
+                return generate_response('fail', nil,'WRONG ACTIVITY ID' , CLIENT_ERROR_CODE)
               end
               settings.database[:activities].find(:_id => activity_bson_id).each do |document|
                 actual_activity = document
               end
               if actual_activity.nil? || actual_activity[:price] != activity[:price]
-                return generate_response('error', { :description => 'ERROR IN ACTIVITY' })
+                return generate_response('fail', nil,'ERROR IN ACTIVITY' , CLIENT_ERROR_CODE)
               end
             end
             app[:group] = application[:group]
@@ -2151,14 +2161,14 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
         end
         result = settings.database[target_database].update_one({owner: target_account[:owner]}, {'$set' => {applications: target_account[:applications]}})
         if result.n == 1
-          generate_response('ok', { _id: app[:_id].to_s })
+          generate_response('ok', { _id: app[:_id].to_s }, nil, SUCCESSFUL_RESPONSE_CODE )
         else
-          generate_response('error', { :description => 'INTERNAL ERROR' })
+          generate_response('fail', nil,'INTERNAL ERROR' , SERVER_ERROR_CODE)
         end
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST' , SERVER_ERROR_CODE)
   end
 end
 
@@ -2184,19 +2194,19 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
       break
     end
     if account.nil?
-      generate_response('error', { :description => 'WRONG USER' })
+      generate_response('fail', nil,'WRONG USER' , SERVER_ERROR_CODE)
     else
       target_account = nil
       account_bson_id = get_bson_id(params[:account_id])
       if account_bson_id.nil?
-        return generate_response('error', { :description => 'WRONG TARGET USER ACCOUNT ID' })
+        return generate_response('fail', nil,'WRONG TARGET USER ACCOUNT ID' , CLIENT_ERROR_CODE)
       end
       settings.database[:accounts].find(:_id => account_bson_id).each do |document|
         target_account = document
         break
       end
       if target_account.nil?
-        return generate_response('error', { :description => 'TARGET USER DOES NOT EXIST' })
+        return generate_response('fail', nil,'TARGET USER DOES NOT EXIST' , SERVER_ERROR_CODE)
       end
       application = nil
       target_account[:applications].each do |item|
@@ -2206,12 +2216,12 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
         end
       end
       if application.nil?
-        generate_response('error', { :description => 'APPLICATION DOES NOT EXIST' })
+        generate_response('fail', nil,'APPLICATION DOES NOT EXIST' , SERVER_ERROR_CODE)
       else
         case params[:action]
           when 'reject'
             if application[:status] != 'in_process'
-              return generate_response('error', { :description => 'IT IS NOT POSSIBLE TO REJECT THE APPLICATION' })
+              return generate_response('fail', nil,'IT IS NOT POSSIBLE TO REJECT THE APPLICATION' , CLIENT_ERROR_CODE)
             end
             application[:status] = 'rejected'
             settings.database[:accounts].update_one({:owner => target_account[:owner]}, {'$set' => {:applications => target_account[:applications]}})
@@ -2222,7 +2232,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
             settings.database[:applications_archive].insert_one({author: application[:author], application_id: application[:_id].to_s, status: 'rejected'})
           when 'approve'
             if application[:status] != 'in_process'
-              return generate_response('error', { :description => 'IT IS NOT POSSIBLE TO APPROVE THE APPLICATION' })
+              return generate_response('fail', nil,'IT IS NOT POSSIBLE TO APPROVE THE APPLICATION' , CLIENT_ERROR_CODE)
             end
             application[:status] = 'approved'
             settings.database[:accounts].update_one({:owner => target_account[:owner]}, {'$set' => {:applications => target_account[:applications]}})
@@ -2247,7 +2257,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
                     actor = document
                   end
                   if actor.nil?
-                    return generate_response('error', { :description => 'ACTOR DOES NOT EXIST'})
+                    return generate_response('fail', nil,'ACTOR DOES NOT EXIST' , SERVER_ERROR_CODE)
                   end
                   amount = nil
                   if work[:activity][:type] == 'permanent'
@@ -2271,18 +2281,18 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
             settings.database[:applications_archive].insert_one({author: application[:author], application_id: application[:_id].to_s, status: 'approved'})
           when 'to_rework'
             if application[:status] != 'in_process'
-              return generate_response('error', { :description => 'IT IS NOT POSSIBLE TO SEND TO REWORK THE APPLICATION' })
+              return generate_response('fail', nil,'IT IS NOT POSSIBLE TO SEND TO REWORK THE APPLICATION' , SERVER_ERROR_CODE)
             end
             application[:status] = 'rework'
             settings.database[:accounts].update_one({:owner => target_account[:owner]}, {'$set' => {:applications => target_account[:applications]}})
             settings.database[:applications_in_work].update_one({application_id: application[:_id].to_s}, {'$set' => {status: 'rework'}})
           else
-            return generate_response('error', { :description => 'WRONG ACTION' })
+            return generate_response('fail', nil,'WRONG ACTION' ,CLIENT_ERROR_CODE)
         end
-        generate_response('ok', { :_id => application[:_id].to_s })
+        generate_response('ok', { :_id => application[:_id].to_s }, nil, SUCCESSFUL_RESPONSE_CODE )
       end
     end
   else
-    generate_response('error', { :description => 'USER DOES NOT EXIST' })
+    generate_response('fail', nil,'USER DOES NOT EXIST' , SERVER_ERROR_CODE)
   end
 end

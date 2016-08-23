@@ -2,7 +2,7 @@ require 'mongo'
 require 'json'
 require_relative 'config'
 
-db = Mongo::Client.new([ "#{DB_HOST}:#{DB_PORT}" ], :database => DATABASE)
+db = Mongo::Client.new([ DB_URL ], :database => DB_NAME)
 db[:categories].find().delete_many
 db[:activities].find().delete_many
 db[:categories].insert_many([{:title => 'Спортивное направление'}, {:title => 'Академическая деятельность'}, {:title => 'Волонтерская деятельность'}])
