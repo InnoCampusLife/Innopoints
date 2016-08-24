@@ -6,14 +6,14 @@ GRANT ALL ON innopoints.* TO 'innopoints_user'@'localhost';
 
 USE innopoints;
 
-CREATE TABLE Accounts (
+CREATE TABLE IF NOT EXISTS Accounts (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   owner INT NOT NULL UNIQUE,
   type ENUM('student', 'admin'),
   points_amount INT,
   creation_date TIMESTAMP NOT NULL
 );
-CREATE TABLE Transactions (
+CREATE TABLE IF NOT EXISTS Transactions (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   account_id INT,
   amount INT NOT NULL,
@@ -23,11 +23,11 @@ CREATE TABLE Transactions (
   status ENUM('active', 'expired', 'spent'),
   FOREIGN KEY (account_id) REFERENCES Accounts(id)
 );
-CREATE TABLE Categories (
+CREATE TABLE IF NOT EXISTS  Categories (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL UNIQUE
 );
-CREATE TABLE Activities (
+CREATE TABLE IF NOT EXISTS  Activities (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   title TEXT NOT NULL,
   comment TEXT,
@@ -40,12 +40,12 @@ CREATE TABLE Activities (
   FOREIGN KEY (category_id) REFERENCES Categories(id)
 );
 
-CREATE TABLE MainPointsOptions ( # for version 2.0
+CREATE TABLE IF NOT EXISTS  MainPointsOptions ( # for version 2.0
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   points_option TEXT
 );
 
-CREATE TABLE MainPointsValues ( # for version 2.0
+CREATE TABLE IF NOT EXISTS  MainPointsValues ( # for version 2.0
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   option_id int,
   activity_id int not NULL,
@@ -55,12 +55,12 @@ CREATE TABLE MainPointsValues ( # for version 2.0
   FOREIGN KEY (activity_id) REFERENCES Activities(id)
 );
 
-CREATE TABLE AdditionalPointsOptions ( # for version 2.0
+CREATE TABLE IF NOT EXISTS AdditionalPointsOptions ( # for version 2.0
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   points_option TEXT
 );
 
-CREATE TABLE AdditionalPointsValues ( # for version 2.0
+CREATE TABLE IF NOT EXISTS AdditionalPointsValues ( # for version 2.0
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   option_id int ,
   activity_id int NOT NULL ,
@@ -70,7 +70,7 @@ CREATE TABLE AdditionalPointsValues ( # for version 2.0
   FOREIGN KEY (activity_id) REFERENCES Activities(id)
 );
 
-CREATE TABLE Applications (
+CREATE TABLE IF NOT EXISTS Applications (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   author INT NOT NULL ,
   type ENUM('personal', 'group'),
@@ -79,7 +79,7 @@ CREATE TABLE Applications (
   creation_date TIMESTAMP NOT NULL,
   FOREIGN KEY (author) REFERENCES Accounts(id)
 );
-CREATE TABLE Works (
+CREATE TABLE IF NOT EXISTS Works (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   actor INT NOT NULL ,
   activity_id INT,
@@ -91,7 +91,7 @@ CREATE TABLE Works (
   FOREIGN KEY (activity_id) REFERENCES Activities(id),
   FOREIGN KEY (application_id) REFERENCES Applications(id)
 );
-CREATE TABLE Files (
+CREATE TABLE IF NOT EXISTS Files (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   filename TEXT NOT NULL ,
   type TEXT NOT NULL ,
@@ -100,14 +100,14 @@ CREATE TABLE Files (
   FOREIGN KEY (application_id) REFERENCES Applications(id)
 );
 
-CREATE TABLE ItemCategories (
+CREATE TABLE IF NOT EXISTS ItemCategories (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  name VARCHAR(255) NOT NULL UNIQUE
+  title VARCHAR(255) NOT NULL UNIQUE
 );
 
-CREATE TABLE Items (
+CREATE TABLE IF NOT EXISTS Items (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  name VARCHAR(255) NOT NULL ,
+  title VARCHAR(255) NOT NULL ,
   option1 VARCHAR(255),
   value1 VARCHAR(255),
   option2 VARCHAR(255),
@@ -119,11 +119,11 @@ CREATE TABLE Items (
   category_id INT NOT NULL,
   possible_joint_purchase BOOLEAN,
   max_buyers INT,
-  main BOOLEAN NOT NULL ,
+  parent INT,
   FOREIGN KEY (category_id) REFERENCES ItemCategories(id)
 );
 
-CREATE TABLE Orders (
+CREATE TABLE IF NOT EXISTS Orders (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process'),
   creation_date TIMESTAMP NOT NULL ,
@@ -133,7 +133,7 @@ CREATE TABLE Orders (
   FOREIGN KEY (account_id) REFERENCES Accounts(id)
 );
 
-CREATE TABLE ItemsInOrder (
+CREATE TABLE IF NOT EXISTS ItemsInOrder (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   order_id int NOT NULL ,
   item_id int NOT NULL ,
@@ -142,7 +142,7 @@ CREATE TABLE ItemsInOrder (
   FOREIGN KEY (item_id) REFERENCES Items(id)
 );
 
-CREATE TABLE OrderContributors (
+CREATE TABLE IF NOT EXISTS  OrderContributors (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   order_id int NOT NULL ,
   account_id int NOT NULL ,
@@ -152,7 +152,7 @@ CREATE TABLE OrderContributors (
   FOREIGN KEY (account_id) REFERENCES Accounts(id)
 );
 
-CREATE TABLE ReservedPointsToOrder (
+CREATE TABLE IF NOT EXISTS  ReservedPointsToOrder (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   order_id INT NOT NULL ,
   account_id INT NOT NULL ,
