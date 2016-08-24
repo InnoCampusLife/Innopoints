@@ -5,9 +5,6 @@ require 'httparty'
 require_relative 'config'
 Dir["models/*.rb"].each {|file| require_relative file }
 
-API_VERSION = 1.0
-URL = "/api/v#{API_VERSION}/points"
-
 set :public_folder => '/public'
 
 set :bind, WEB_HOST
@@ -1130,4 +1127,46 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
   else
     generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
   end
+end
+
+# ------------------------ e-shop api ---------------------------
+
+=begin
+
+=end
+get URL + '/shop/items' do
+  content_type :json
+  skip = validate_skip(params[:skip])
+  limit =  validate_limit(params[:limit])
+  fields = params[:fields]
+  order = params[:order]
+  if fields.nil?
+    fields_array = Array.new
+    fields_array.push(DEFAULT_ITEMS_SORT_FIELD)
+  else
+    fields_array = fields.split(',')
+    if fields_array.length > 2 || fields_array.length == 0
+      return generate_response('fail', nil, 'ERROR IN SORT FIELDS', CLIENT_ERROR_CODE)
+    end
+    (0..(fields_array.length - 1)).each do |i|
+      if fields_array[i].strip == 'name' || fields_array[i].strip == 'price'
+        fields_array[i] = fields_array[i].strip
+      else
+        return generate_response('fail', nil, 'ERROR IN SORT FIELDS', CLIENT_ERROR_CODE)
+      end
+    end
+    if fields_array.length == 2
+      if fields_array[0] == fields_array[1]
+        fields_array.delete_at(1)
+      end
+    end
+  end
+  if order.nil?
+    order = DEFAULT_SORT_ORDER
+  else
+    if order != 'ASC' && order != 'DESC'
+      order = DEFAULT_SORT_ORDER
+    end
+  end
+  'ok'
 end
