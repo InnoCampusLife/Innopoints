@@ -114,8 +114,53 @@ CREATE TABLE Items (
   option3 VARCHAR(255),
   value3 VARCHAR(255),
   quantity int,
-  price int NOT NULL
+  price int NOT NULL,
+  category_id INT NOT NULL,
+  possible_joint_purchase BOOLEAN,
+  max_buyers INT,
+  FOREIGN KEY (category_id) REFERENCES ItemCategories(id)
 );
+
+CREATE TABLE Orders (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process'),
+  creation_date TIMESTAMP NOT NULL ,
+  is_joint_purchase BOOLEAN NOT NULL ,
+  account_id int NOT NULL ,
+  total_price int NOT NULL ,
+  FOREIGN KEY (account_id) REFERENCES Accounts(id)
+);
+
+CREATE TABLE ItemsInOrder (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  order_id int NOT NULL ,
+  item_id int NOT NULL ,
+  amount int,
+  FOREIGN KEY (order_id) REFERENCES Orders(id),
+  FOREIGN KEY (item_id) REFERENCES Items(id)
+);
+
+CREATE TABLE OrderContributors (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  order_id int NOT NULL ,
+  account_id int NOT NULL ,
+  points_amount int NOT NULL ,
+  is_agreed BOOLEAN NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES Orders(id),
+  FOREIGN KEY (account_id) REFERENCES Accounts(id)
+);
+
+CREATE TABLE ReservedPointsToOrder (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  order_id INT NOT NULL ,
+  account_id INT NOT NULL ,
+  points_amount INT NOT NULL ,
+  FOREIGN KEY (order_id) REFERENCES Orders(id),
+  FOREIGN KEY (account_id) REFERENCES Accounts(id)
+)
+
+
+
 
 # DROP TABLE Items, ItemCategories, Files, Works, Applications, AdditionalPointsValues, AdditionalPointsOptions, MainPointsValues, MainPointsOptions, Activities, Categories, Transactions, Accounts;
 # drop DATABASE innopoints;
