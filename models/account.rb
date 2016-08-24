@@ -45,7 +45,7 @@ class Account
     accounts = Array.new
     DB.query("SELECT * FROM Accounts WHERE type='student' LIMIT #{skip}, #{limit};").each do |row|
       accounts.push({
-          _id: row[:id],
+          id: row[:id],
           owner: row[:owner],
           points_amount: row[:points_amount]
                     })
@@ -73,7 +73,7 @@ class Account
 
   def self.to_info(account)
     account_info = Hash.new
-    account_info[:_id] = account[:id]
+    account_info[:id] = account[:id]
     account_info[:owner] = account[:owner]
     account_info[:type] = account[:type]
     if account[:type] == 'student'

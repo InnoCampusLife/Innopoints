@@ -7,7 +7,7 @@ class Category
     DB.query("SELECT * FROM Categories LIMIT #{skip}, #{limit};").each do |row|
       puts row
       categories.push({
-          _id: row[:id],
+          id: row[:id],
           title: row[:title]
                       })
     end

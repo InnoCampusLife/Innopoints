@@ -22,7 +22,7 @@ class StoredFile
     files = nil
     DB.query("SELECT * FROM Files WHERE application_id=#{application_id};").each do |row|
       files.push({
-          _id: row[:id],
+          id: row[:id],
           filename: row[:filename],
           type: row[:type],
           download_link: row[:download_link]

@@ -1,6 +1,6 @@
-CREATE DATABASE innopoints DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+CREATE DATABASE IF NOT EXISTS innopoints DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 
-CREATE USER 'innopoints_user'@'localhost' IDENTIFIED BY 'innopoints2.0';
+# CREATE USER IF NOT EXISTS 'innopoints_user'@'localhost' IDENTIFIED BY 'innopoints2.0';
 
 GRANT ALL ON innopoints.* TO 'innopoints_user'@'localhost';
 
@@ -9,6 +9,7 @@ USE innopoints;
 CREATE TABLE Accounts (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   owner INT NOT NULL UNIQUE,
+  type ENUM('student', 'admin'),
   points_amount INT,
   creation_date TIMESTAMP NOT NULL
 );
@@ -118,6 +119,7 @@ CREATE TABLE Items (
   category_id INT NOT NULL,
   possible_joint_purchase BOOLEAN,
   max_buyers INT,
+  main BOOLEAN NOT NULL ,
   FOREIGN KEY (category_id) REFERENCES ItemCategories(id)
 );
 

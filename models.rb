@@ -72,7 +72,7 @@
 
 {
     account: 'account id',
-    items: [ instances of Item ],
+    items: [ instances of ShopItem ],
     total_price: 100
 }
 # Activity

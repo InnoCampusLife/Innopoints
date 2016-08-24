@@ -1,7 +1,7 @@
 API_VERSION = 1
 URL = "/api/v#{API_VERSION}/points"
 FILES_FOLDER = '/public'
-
+ITEMS_IMAGE_FOLDER = '/items'
 
 def env_or_default(key, default)
   if ENV[key] == nil

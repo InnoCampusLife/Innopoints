@@ -62,24 +62,24 @@ helpers do
   end
 
   def is_token_valid(token)
-    resp = HTTParty.get(ACCOUNTS_URL + token)
-    # resp = Hash.new
-    # if token == 'test'
-    #   resp[:status] = 'ok'
-    #   resp[:result] = Hash.new
-    #   resp[:result][:id] = 1
-    #   resp[:result][:role] = 'student'
-    # elsif token == 'admin'
-    #   resp[:status] = 'ok'
-    #   resp[:result] = Hash.new
-    #   resp[:result][:id] = 2
-    #   resp[:result][:role] = 'moderator'
-    # else
-    #   resp[:status] = 'error'
-    # end
-    #
-    # resp
-    JSON.parse(resp.body, symbolize_names: true)
+    # resp = HTTParty.get(ACCOUNTS_URL + token)
+    resp = Hash.new
+    if token == 'test'
+      resp[:status] = 'ok'
+      resp[:result] = Hash.new
+      resp[:result][:id] = 1
+      resp[:result][:role] = 'student'
+    elsif token == 'admin'
+      resp[:status] = 'ok'
+      resp[:result] = Hash.new
+      resp[:result][:id] = 2
+      resp[:result][:role] = 'moderator'
+    else
+      resp[:status] = 'error'
+    end
+
+    resp
+    # JSON.parse(resp.body, symbolize_names: true)
   end
 
   def is_activity_correct(activity_id, price)
@@ -183,11 +183,11 @@ post URL + '/accounts/:token/applications' do
       personal: {
           work: {
               activity: {
-                  _id: '2',
+                  id: '2',
                   title: 'hui',
                   type: 'permanent',
                   category: {
-                      _id: '2',
+                      id: '2',
                       title: 'Sport'
                   },
                   price: 200
@@ -220,14 +220,14 @@ post URL + '/accounts/:token/applications' do
       case application[:type]
         when 'personal'
           work = application[:personal][:work]
-          unless is_activity_correct(work[:activity][:_id], work[:activity][:price])
+          unless is_activity_correct(work[:activity][:id], work[:activity][:price])
             return generate_response('fail', nil, 'ERROR IN AN ACTIVITY', CLIENT_ERROR_CODE)
           end
           work[:actor] = account[:owner]
           works.push(work)
         when 'group'
           application[:group][:work].each do |work|
-            unless is_activity_correct(work[:activity][:_id], work[:activity][:price])
+            unless is_activity_correct(work[:activity][:id], work[:activity][:price])
               return generate_response('fail', nil, 'ERROR IN AN ACTIVITY', CLIENT_ERROR_CODE)
             end
           end
@@ -242,7 +242,7 @@ post URL + '/accounts/:token/applications' do
         if actor_account.nil?
           actor_account = Account.create(work[:actor], 'student')
         end
-        created_work = Work.create(actor_account[:id], work[:activity][:_id], created_application[:id], work[:amount])
+        created_work = Work.create(actor_account[:id], work[:activity][:id], created_application[:id], work[:amount])
         if created_work.nil?
           return generate_response('fail', nil, 'ERROR WHILE CREATING WORK OCCURED', SERVER_ERROR_CODE)
         end
@@ -266,7 +266,7 @@ post URL + '/accounts/:token/applications' do
         download_link = URL + '/accounts/' + token + '/applications/' + created_application[:id] + '/files/' + created_file[:id].to_s + extension
         StoredFile.update_download_link(created_file[:id], download_link)
       end
-      generate_response('ok', { :_id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+      generate_response('ok', { :id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
     generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
@@ -423,7 +423,7 @@ get URL + '/accounts/:account_id/applications/:application_id/files/:file' do
     elsif file[:application_id] != application_id
       generate_response('fail', nil, 'WRONG APPLICATION', CLIENT_ERROR_CODE)
     else
-      file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + account[:_id] + '/' + application[:_id] + '/' + params[:file]
+      file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + account[:id] + '/' + application[:id] + '/' + params[:file]
       if File.exists?(file_url)
         send_file file_url, :filename => file[:filename], :type => 'Application/octet-stream'
       else
@@ -519,11 +519,11 @@ put URL + '/accounts/:token/applications/:application_id' do
       personal: {
           work: {
               activity: {
-                  _id: '1',
+                  id: '1',
                   title: 'Активность 1',
                   type: 'hourly',
                   category: {
-                      _id: '1',
+                      id: '1',
                       title: 'Sport'
                   },
                   price: 100
@@ -558,11 +558,11 @@ put URL + '/accounts/:token/applications/:application_id' do
             return generate_response('fail',nil, 'INTERNAL ERROR', SERVER_ERROR_CODE)
           end
           to_work_update = Hash.new
-          if work[:activity][:_id] != stored_work[:activity_id]
-            unless is_activity_correct(work[:activity][:_id], work[:activity][:price])
+          if work[:activity][:id] != stored_work[:activity_id]
+            unless is_activity_correct(work[:activity][:id], work[:activity][:price])
               return generate_response('fail',nil, 'ERROR IN ACTIVITY', CLIENT_ERROR_CODE)
             end
-            to_work_update[:activity_id] = work[:activity][:_id]
+            to_work_update[:activity_id] = work[:activity][:id]
           end
           if ((work[:activity][:type] == 'hourly' || work[:activity][:type] == 'quantity') && !(work[:amount] > 0)) || (work[:activity][:type] == 'permanent' && work[:amount].nil?)
             return generate_response('fail',nil, 'ERROR IN WORK', CLIENT_ERROR_CODE)
@@ -585,11 +585,11 @@ put URL + '/accounts/:token/applications/:application_id' do
             if stored_work.nil?
               return generate_response('fail',nil, 'INTERNAL ERROR', SERVER_ERROR_CODE)
             end
-            if work[:activity][:_id] != stored_work[:activity_id]
-              unless is_activity_correct(work[:activity][:_id], work[:activity][:price])
+            if work[:activity][:id] != stored_work[:activity_id]
+              unless is_activity_correct(work[:activity][:id], work[:activity][:price])
                 return generate_response('fail',nil, 'ERROR IN ACTIVITY', CLIENT_ERROR_CODE)
               end
-              to_work_update[stored_work[:id]][:activity_id] = work[:activity][:_id]
+              to_work_update[stored_work[:id]][:activity_id] = work[:activity][:id]
             end
             if ((work[:activity][:type] == 'hourly' || work[:activity][:type] == 'quantity') && !(work[:amount] > 0)) || (work[:activity][:type] == 'permanent' && work[:amount].nil?)
               return generate_response('fail',nil, 'ERROR IN WORK', CLIENT_ERROR_CODE)
@@ -605,7 +605,7 @@ put URL + '/accounts/:token/applications/:application_id' do
           end
       end
       if application[:comment] != stored_application[:comment]
-        Application.update_comment(stored_application[:_id], application[:comment])
+        Application.update_comment(stored_application[:id], application[:comment])
       end
       #TODO Work with files
       folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + stored_application[:id].to_s
@@ -626,7 +626,7 @@ put URL + '/accounts/:token/applications/:application_id' do
         download_link = URL + '/accounts/' + token + '/applications/' + stored_application[:id] + '/files/' + created_file[:id].to_s + extension
         StoredFile.update_download_link(created_file[:id], download_link)
       end
-      generate_response('ok', { _id: stored_application[:_id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+      generate_response('ok', { id: stored_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
     generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -833,11 +833,11 @@ post URL + '/admin/:admin_token/applications' do
               {
                   actor: 1,
                   activity: {
-                      _id: '1',
+                      id: '1',
                       title: 'Активность 1',
                       type: 'hourly',
                       category: {
-                          _id: 'some id',
+                          id: 'some id',
                           title: 'Sport'
                       },
                       price: 100
@@ -869,7 +869,7 @@ post URL + '/admin/:admin_token/applications' do
         return generate_response('fail', nil, 'ADMIN CAN\'T CREATE PERSONAL APPLICATION', CLIENT_ERROR_CODE)
       end
       application[:group][:work].each do |work|
-        activity_id = is_integer_valid(work[:activity][:_id])
+        activity_id = is_integer_valid(work[:activity][:id])
         if activity_id.nil?
           return generate_response('fail', nil, 'WRONG ACTIVITY ID', CLIENT_ERROR_CODE)
         end
@@ -887,7 +887,7 @@ post URL + '/admin/:admin_token/applications' do
         if actor_account.nil?
           actor_account = Account.create(work[:actor], 'student')
         end
-        created_work = Work.create(actor_account[:id], work[:activity][:_id], created_application[:id], work[:amount])
+        created_work = Work.create(actor_account[:id], work[:activity][:id], created_application[:id], work[:amount])
         if created_work.nil?
           return generate_response('fail', nil, 'ERROR WHILE CREATING WORK OCCURED', SERVER_ERROR_CODE)
         end
@@ -911,7 +911,7 @@ post URL + '/admin/:admin_token/applications' do
         download_link = URL + '/accounts/' + token + '/applications/' + created_application[:id] + '/files/' + created_file[:id].to_s + extension
         StoredFile.update_download_link(created_file[:id], download_link)
       end
-      generate_response('ok', { :_id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+      generate_response('ok', { :id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
     generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -971,7 +971,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
     case params[:action]
       when 'reject'
         Application.update_status(application_id, 'rejected')
-        return generate_response('ok', { :_id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
+        return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
       when 'approve'
         works = Work.get_list_by_application_id(application_id)
         to_insert = Hash.new
@@ -994,10 +994,10 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
           account = Account.get_by_id(acc_id)
           Account.update_points_amount(acc_id, account[:points_amount] + points)
         end
-        return generate_response('ok', { :_id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
+        return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
       when 'to_rework'
         Application.update_status(application_id, 'rework')
-        return generate_response('ok', { :_id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
+        return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
       else
         return generate_response('fail', nil, 'WRONG ACTION', CLIENT_ERROR_CODE)
     end
@@ -1015,11 +1015,11 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
       personal: {
           work: {
               activity: {
-                  _id: '1',
+                  id: '1',
                   title: 'Активность 1',
                   type: 'hourly',
                   category: {
-                      _id: '1',
+                      id: '1',
                       title: 'Sport'
                   },
                   price: 100
@@ -1054,11 +1054,11 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
             return generate_response('fail',nil, 'INTERNAL ERROR', SERVER_ERROR_CODE)
           end
           to_work_update = Hash.new
-          if work[:activity][:_id] != stored_work[:activity_id]
-            unless is_activity_correct(work[:activity][:_id], work[:activity][:price])
+          if work[:activity][:id] != stored_work[:activity_id]
+            unless is_activity_correct(work[:activity][:id], work[:activity][:price])
               return generate_response('fail',nil, 'ERROR IN ACTIVITY', CLIENT_ERROR_CODE)
             end
-            to_work_update[:activity_id] = work[:activity][:_id]
+            to_work_update[:activity_id] = work[:activity][:id]
           end
           if ((work[:activity][:type] == 'hourly' || work[:activity][:type] == 'quantity') && !(work[:amount] > 0)) || (work[:activity][:type] == 'permanent' && work[:amount].nil?)
             return generate_response('fail',nil, 'ERROR IN WORK', CLIENT_ERROR_CODE)
@@ -1081,11 +1081,11 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
             if stored_work.nil?
               return generate_response('fail',nil, 'INTERNAL ERROR', SERVER_ERROR_CODE)
             end
-            if work[:activity][:_id] != stored_work[:activity_id]
-              unless is_activity_correct(work[:activity][:_id], work[:activity][:price])
+            if work[:activity][:id] != stored_work[:activity_id]
+              unless is_activity_correct(work[:activity][:id], work[:activity][:price])
                 return generate_response('fail',nil, 'ERROR IN ACTIVITY', CLIENT_ERROR_CODE)
               end
-              to_work_update[stored_work[:id]][:activity_id] = work[:activity][:_id]
+              to_work_update[stored_work[:id]][:activity_id] = work[:activity][:id]
             end
             if ((work[:activity][:type] == 'hourly' || work[:activity][:type] == 'quantity') && !(work[:amount] > 0)) || (work[:activity][:type] == 'permanent' && work[:amount].nil?)
               return generate_response('fail',nil, 'ERROR IN WORK', CLIENT_ERROR_CODE)
@@ -1101,7 +1101,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
           end
       end
       if application[:comment] != stored_application[:comment]
-        Application.update_comment(stored_application[:_id], application[:comment])
+        Application.update_comment(stored_application[:id], application[:comment])
       end
       #TODO Work with files
       folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + stored_application[:id].to_s
@@ -1122,7 +1122,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
         download_link = URL + '/accounts/' + token + '/applications/' + stored_application[:id] + '/files/' + created_file[:id].to_s + extension
         StoredFile.update_download_link(created_file[:id], download_link)
       end
-      generate_response('ok', { _id: stored_application[:_id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+      generate_response('ok', { id: stored_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
     generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)

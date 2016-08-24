@@ -21,7 +21,7 @@ class Application
     DB.query("SELECT * FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
       account = Account.get_by_id(row[:author])
       applications.push({
-                            _id: row[:id],
+                            id: row[:id],
                             author: {
                                 id: account[:id],
                                 uis_id: account[:owner]
@@ -40,7 +40,7 @@ class Application
     if status.nil?
       DB.query("SELECT * FROM Applications WHERE author=#{account_id} LIMIT #{skip}, #{limit};").each do |row|
         applications.push({
-            _id: row[:id],
+            id: row[:id],
             author: account[:owner],
             type: row[:type],
             status: row[:status],
@@ -50,7 +50,7 @@ class Application
     else
       DB.query("SELECT * FROM Applications WHERE author=#{account_id} AND status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
         applications.push({
-                              _id: row[:id],
+                              id: row[:id],
                               author: account[:owner],
                               type: row[:type],
                               status: row[:status],
@@ -90,7 +90,7 @@ class Application
       return nil
     end
     result_application = Hash.new
-    result_application[:_id] = application[:id]
+    result_application[:id] = application[:id]
     result_application[:type] = application[:type]
     result_application[:author] = account[:owner]
     result_application[:comment] = application[:comment]
