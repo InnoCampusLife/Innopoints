@@ -1,3 +1,11 @@
+CREATE DATABASE innopoints DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+
+CREATE USER 'innopoints_user'@'localhost' IDENTIFIED BY 'innopoints2.0';
+
+GRANT ALL ON innopoints.* TO 'innopoints_user'@'localhost';
+
+USE innopoints;
+
 CREATE TABLE Accounts (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   owner INT NOT NULL UNIQUE,
@@ -16,13 +24,14 @@ CREATE TABLE Transactions (
 );
 CREATE TABLE Categories (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(256) NOT NULL UNIQUE
+  title VARCHAR(255) NOT NULL UNIQUE
 );
 CREATE TABLE Activities (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   title TEXT NOT NULL,
   comment TEXT,
   for_approval TEXT,
+  type ENUM('hourly', 'permanent', 'quantity'),
   category_id INT,
   main_option_exists BOOLEAN, # for version 2.0
   additional_exists BOOLEAN, # for version 2.0
@@ -90,10 +99,24 @@ CREATE TABLE Files (
   FOREIGN KEY (application_id) REFERENCES Applications(id)
 );
 
+CREATE TABLE ItemCategories (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  name VARCHAR(255) NOT NULL UNIQUE
+);
+
 CREATE TABLE Items (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  name VARCHAR(255) NOT NULL ,
+  option1 VARCHAR(255),
+  value1 VARCHAR(255),
+  option2 VARCHAR(255),
+  value2 VARCHAR(255),
+  option3 VARCHAR(255),
+  value3 VARCHAR(255),
+  quantity int,
+  price int NOT NULL
+);
 
-)
-
+# DROP TABLE Items, ItemCategories, Files, Works, Applications, AdditionalPointsValues, AdditionalPointsOptions, MainPointsValues, MainPointsOptions, Activities, Categories, Transactions, Accounts;
 # drop DATABASE innopoints;
 # CREATE DATABASE innopoints;

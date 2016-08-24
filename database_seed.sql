@@ -1,3 +1,5 @@
+USE innopoints;
+
 INSERT INTO Categories VALUES (DEFAULT , 'Категория 1');
 INSERT INTO Categories VALUES (DEFAULT , 'Категория 2');
 

@@ -4,6 +4,10 @@ require 'fileutils'
 require 'httparty'
 require_relative 'config'
 Dir["models/*.rb"].each {|file| require_relative file }
+
+API_VERSION = 1.0
+URL = "/api/v#{API_VERSION}/points"
+
 set :public_folder => '/public'
 
 set :bind, WEB_HOST

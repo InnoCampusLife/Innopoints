@@ -38,4 +38,12 @@ DB_NAME = 'innopoints'
 
 DB_URL = "#{DB_HOST}:#{DB_PORT}"
 
+# mysql database params
+
+MYSQL_DB_HOST = env_or_default('MYSQL_DB_HOST', 'localhost')
+MYSQL_DB_PORT = env_or_default('MYSQL_DB_PORT', 3306).to_i
+MYSQL_DB_NAME = 'innopoints'
+MYSQL_DB_USER = 'innopoints_user'
+MYSQL_DB_PASSWORD = 'innopoints2.0'
+
 DEFAULT_LIMIT = 20
