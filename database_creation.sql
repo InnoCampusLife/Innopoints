@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS innopoints DEFAULT CHARACTER SET utf8 DEFAULT COLL
 
 # CREATE USER IF NOT EXISTS 'innopoints_user'@'localhost' IDENTIFIED BY 'innopoints2.0';
 
-GRANT ALL ON innopoints.* TO 'innopoints_user'@'localhost';
+GRANT ALL ON innopoints.* TO 'innopoints_user'@'%' IDENTIFIED BY 'innopoints2.0';
 
 USE innopoints;
 
