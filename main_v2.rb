@@ -4,7 +4,13 @@ require 'fileutils'
 require 'httparty'
 require_relative 'config'
 require_relative 'models/category'
-Dir["models/*.rb"].each {|file| require_relative file }
+require_relative 'models/account'
+require_relative 'models/activity'
+require_relative 'models/application'
+require_relative 'models/shop_item'
+require_relative 'models/stored_file'
+require_relative 'models/transaction'
+require_relative 'models/work'
 
 set :public_folder => '/public'
 
