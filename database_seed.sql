@@ -1,9 +1,11 @@
 USE innopoints;
-TRUNCATE Categories;
-TRUNCATE Activities;
-TRUNCATE ItemCategories;
-TRUNCATE Items;
-
+DELETE FROM Activities;
+DELETE FROM Categories;
+DELETE FROM Items;
+DELETE FROM ItemCategories;
+ALTER TABLE Categories AUTO_INCREMENT = 1;
+ALTER TABLE ItemCategories AUTO_INCREMENT = 1;
+ALTER TABLE Items AUTO_INCREMENT = 1;
 
 INSERT INTO Categories (id, title) VALUES (DEFAULT , 'Категория 1');
 INSERT INTO Categories (id, title) VALUES (DEFAULT , 'Категория 2');
