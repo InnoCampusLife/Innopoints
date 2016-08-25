@@ -3,6 +3,7 @@ require 'json'
 require 'fileutils'
 require 'httparty'
 require_relative 'config'
+require_relative 'models/category'
 Dir["models/*.rb"].each {|file| require_relative file }
 
 set :public_folder => '/public'
