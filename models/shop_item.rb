@@ -50,6 +50,31 @@ class ShopItem
     items
   end
 
+  def self.check_quantity(item_ids_hash)
+    query_string = ''
+    counter = item_ids_hash.size
+    item_ids_hash.each do |id, quantity|
+      query_string += "id=#{id}"
+      counter -= 1
+      if counter > 0
+        query_string += " OR "
+      end
+    end
+    stored_items = Hash.new
+    DB.query("SELECT id, quantity, price FROM Items WHERE #{query_string};").each do |row|
+      stored_items[row[:id]] = row
+    end
+    if stored_items.size < item_ids_hash.size
+      return 'WRONG ITEM'
+    end
+    stored_items.each do |id, item|
+      if item_ids_hash[id] > item[:quantity]
+        return 'WRONG QUANTITY'
+      end
+    end
+    stored_items
+  end
+
   def self.get_main_by_id(id)
     result_item = Hash.new
     result_item[:combinations] = Hash.new
@@ -65,7 +90,7 @@ class ShopItem
         tmp[row[('option' + i.to_s).to_sym]] = row[('value' + i.to_s).to_sym]
       end
       tmp_value[:id] = row[:id]
-      row[:quantity] == 0 ? tmp_value[:in_stock] = false : tmp_value[:in_stock] = true
+      tmp_value[:quantity] = row[:quantity]
       result_item[:combinations][tmp] = tmp_value
     end
     if parent_item.nil?
@@ -83,7 +108,7 @@ class ShopItem
         tmp[row[('option' + i.to_s).to_sym]] = row[('value' + i.to_s).to_sym]
       end
       tmp_value[:id] = row[:id]
-      row[:quantity] == 0 ? tmp_value[:in_stock] = false : tmp_value[:in_stock] = true
+      tmp_value[:quantity] = row[:quantity]
       result_item[:combinations][tmp] = tmp_value
     end
     result_item[:id] = parent_item[:id]
@@ -113,5 +138,9 @@ class ShopItem
                                  })
     end
     result_item
+  end
+
+  def self.update_quantity(id, quantity)
+    DB.query("UPDATE Items SET quantity=#{quantity} WHERE id=#{id};")
   end
 end

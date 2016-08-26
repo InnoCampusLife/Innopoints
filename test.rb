@@ -44,4 +44,11 @@ require_relative 'database_handler'
 # rescue BSON::ObjectId::Invalid
 #   puts 'asd'
 # end
-
+asd = 'asd'
+if asd == true
+  puts 'true'
+elsif asd == false
+  puts 'false'
+else
+  puts 'nil'
+end

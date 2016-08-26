@@ -11,6 +11,8 @@ require_relative 'models/shop_item'
 require_relative 'models/stored_file'
 require_relative 'models/transaction'
 require_relative 'models/work'
+require_relative 'models/order'
+require_relative 'models/item_in_order'
 
 set :public_folder => '/public'
 
@@ -68,6 +70,7 @@ helpers do
     resp.to_json
   end
 
+  # CheckToken
   def is_token_valid(token)
     # resp = HTTParty.get(ACCOUNTS_URL + token)
     resp = Hash.new
@@ -102,7 +105,7 @@ helpers do
 
 
 end
-
+# GetCategories
 get URL + '/categories' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -111,6 +114,7 @@ get URL + '/categories' do
   generate_response('ok', categories, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
+# GetActivities
 get URL + '/activities' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -119,6 +123,7 @@ get URL + '/activities' do
   generate_response('ok', activities, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
+# GetActivitiesInCategory
 get URL + '/activities/:category_id' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -133,6 +138,7 @@ get URL + '/activities/:category_id' do
   generate_response('ok', activities, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
+# GetAccount
 get URL + '/accounts/:token' do
   content_type :json
   resp = is_token_valid(params[:token])
@@ -150,6 +156,7 @@ get URL + '/accounts/:token' do
   end
 end
 
+# CreateAccount
 post URL + '/accounts/:token' do
   content_type :json
   resp = is_token_valid(params[:token])
@@ -181,6 +188,7 @@ post URL + '/accounts/:token' do
   end
 end
 
+# CreateApplication
 post URL + '/accounts/:token/applications' do
   content_type :json
   token = params[:token]
@@ -280,6 +288,7 @@ post URL + '/accounts/:token/applications' do
   end
 end
 
+# GetAllApplications
 get URL + '/accounts/:token/applications' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -299,6 +308,7 @@ get URL + '/accounts/:token/applications' do
   end
 end
 
+# GetApplicationsInProcess
 get URL + '/accounts/:token/applications/in_process' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -318,6 +328,7 @@ get URL + '/accounts/:token/applications/in_process' do
   end
 end
 
+# GetApplicationsRejected
 get URL + '/accounts/:token/applications/rejected' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -337,6 +348,7 @@ get URL + '/accounts/:token/applications/rejected' do
   end
 end
 
+# GetApplicationsRework
 get URL + '/accounts/:token/applications/rework' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -356,6 +368,7 @@ get URL + '/accounts/:token/applications/rework' do
   end
 end
 
+# GetApplicationsApproved
 get URL + '/accounts/:token/applications/approved' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -375,6 +388,7 @@ get URL + '/accounts/:token/applications/approved' do
   end
 end
 
+# GetApplication
 get URL + '/accounts/:token/applications/:application_id' do
   content_type :json
   token = params[:token]
@@ -403,6 +417,7 @@ get URL + '/accounts/:token/applications/:application_id' do
   end
 end
 
+# GetFile
 get URL + '/accounts/:account_id/applications/:application_id/files/:file' do
   content_type :json
   account_id = params[:account_id]
@@ -440,6 +455,7 @@ get URL + '/accounts/:account_id/applications/:application_id/files/:file' do
   end
 end
 
+# DeletFile
 delete URL + '/accounts/:token/applications/:application_id/files/:file' do
   content_type :json
   token = params[:token]
@@ -485,6 +501,7 @@ delete URL + '/accounts/:token/applications/:application_id/files/:file' do
   end
 end
 
+# DeleteApplication
 delete URL + '/accounts/:token/applications/:application_id' do
   content_type :json
   token = params[:token]
@@ -518,6 +535,7 @@ delete URL + '/accounts/:token/applications/:application_id' do
   end
 end
 
+# UpdateApplication
 put URL + '/accounts/:token/applications/:application_id' do
   content_type :json
   token = params[:token]
@@ -640,8 +658,7 @@ put URL + '/accounts/:token/applications/:application_id' do
   end
 end
 
-
-
+# SendToApprove
 put URL + '/accounts/:token/applications/:application_id/approve' do
   content_type :json
   token = params[:token]
@@ -670,6 +687,7 @@ end
 
 #---------------------------- Adminstrators ------------------------------
 
+# GetAccounts
 get URL + '/admin/:admin_token/accounts' do
   content_type :json
   admin_token = params[:admin_token]
@@ -689,6 +707,7 @@ get URL + '/admin/:admin_token/accounts' do
   end
 end
 
+# GetAccount
 get URL + '/admin/:admin_token/accounts/:account_id' do
   content_type :json
   admin_token = params[:admin_token]
@@ -716,6 +735,7 @@ get URL + '/admin/:admin_token/accounts/:account_id' do
   end
 end
 
+# UpdateAccount
 put URL + '/admin/:admin_token/accounts/:account_id' do
   content_type :json
   admin_token = params[:admin_token]
@@ -751,6 +771,7 @@ put URL + '/admin/:admin_token/accounts/:account_id' do
   end
 end
 
+# GetApplicationsInProcess
 get URL + '/admin/:admin_token/applications/in_process' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -770,6 +791,7 @@ get URL + '/admin/:admin_token/applications/in_process' do
   end
 end
 
+# GetApplicationsRejected
 get URL + '/admin/:admin_token/applications/rejected' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -789,7 +811,7 @@ get URL + '/admin/:admin_token/applications/rejected' do
   end
 end
 
-
+# GetApplicationsRework
 get URL + '/admin/:admin_token/applications/rework' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -809,7 +831,7 @@ get URL + '/admin/:admin_token/applications/rework' do
   end
 end
 
-
+# GetApplicationsApproved
 get URL + '/admin/:admin_token/applications/approved' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -829,6 +851,7 @@ get URL + '/admin/:admin_token/applications/approved' do
   end
 end
 
+# CreateApplication
 post URL + '/admin/:admin_token/applications' do
   content_type :json
   token = params[:admin_token]
@@ -925,6 +948,7 @@ post URL + '/admin/:admin_token/applications' do
   end
 end
 
+# GetApplication
 get URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id' do
   content_type :json
   admin_token = params[:admin_token]
@@ -953,6 +977,7 @@ get URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
   end
 end
 
+# UpdateApplicationStatus
 put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id/:action' do
   content_type :json
   admin_token = params[:admin_token]
@@ -1013,6 +1038,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
   end
 end
 
+# UpdateApplication
 put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id' do
   content_type :json
   token = params[:admin_token]
@@ -1139,7 +1165,7 @@ end
 # ------------------------ e-shop api ---------------------------
 
 =begin
-
+ GetItems
 =end
 get URL + '/shop/items' do
   content_type :json
@@ -1179,6 +1205,7 @@ get URL + '/shop/items' do
   generate_response('ok', items, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
+# GetItemsInCategory
 get URL + '/shop/items/category/:category_id' do
   content_type :json
   skip = validate_skip(params[:skip])
@@ -1221,6 +1248,7 @@ get URL + '/shop/items/category/:category_id' do
   generate_response('ok', items, nil, SUCCESSFUL_RESPONSE_CODE)
 end
 
+# GetItem
 get URL + '/shop/items/:id' do
   content_type :json
   item_id = is_integer_valid(params[:id])
@@ -1235,3 +1263,125 @@ get URL + '/shop/items/:id' do
   end
 end
 
+# CreateOrder
+post URL + '/accounts/:token/orders' do
+  content_type :json
+  token = params[:token]
+  resp = is_token_valid(token)
+  order = {
+      is_joint_purchase: false,
+      items: [
+          {
+              id: 1,
+              amount: 2
+          },
+          {
+              id: 2,
+              amount: 1
+          }
+      ],
+      contributors: nil
+  }
+
+  joint_order = {
+      is_joint_order: true,
+      items: [ # only 1 item
+          {
+              id: 1,
+              amount: 3
+          }
+      ],
+      contributors: [
+          {
+              id: 1, # uis id of author of order. It has to be first element of the array.
+              points_amount: 200
+          },
+          {
+              id: 2, #uis id o some other person
+              points_amount: 300
+          }
+      ]
+  }
+  if resp[:status] == 'ok'
+    id = resp[:result][:id]
+    account = Account.get_by_owner(id)
+    if account.nil?
+      return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+    end
+    if order[:is_joint_purchase].nil?
+      puts '--------------------'
+      puts 'wrong is_joint_purchase'
+      puts '--------------------'
+      return generate_response('fail', nil, 'WRONG FORMAT OF ORDER', CLIENT_ERROR_CODE)
+    end
+    if order[:is_joint_purchase] == true
+
+    elsif order[:is_joint_purchase] == false
+      items = order[:items]
+      if items.nil? || items.size == 0
+        puts '--------------------'
+        puts 'wrong items array'
+        puts '--------------------'
+        return generate_response('fail', nil, 'WRONG FORMAT OF ORDER', CLIENT_ERROR_CODE)
+      end
+      item_ids_hash = Hash.new
+      items.each do |item|
+        item_id = is_integer_valid(item[:id])
+        item_amount = is_integer_valid(item[:amount])
+        if item_id.nil? || item_amount.nil? || item_id <= 0 || item_amount <= 0
+          return generate_response('fail', nil, 'WRONG FORMAT OF ITEMS', CLIENT_ERROR_CODE)
+        end
+        if item_ids_hash[item_id].nil?
+          item_ids_hash[item_id] = item_amount
+        else
+          item_ids_hash[item_id] += item_amount
+        end
+      end
+      result = ShopItem.check_quantity(item_ids_hash)
+      stored_items = nil
+      case result
+        when 'WRONG ITEM'
+          puts '------------------'
+          puts 'Some item is missing'
+          puts '------------------'
+          return generate_response('fail', nil, 'WRONG ITEM IN ORDER', CLIENT_ERROR_CODE)
+        when 'WRONG QUANTITY'
+          puts '------------------'
+          puts 'Too much for some item'
+          puts '------------------'
+          return generate_response('fail', nil, 'WRONG QUANTITY OF AN ITEM', CLIENT_ERROR_CODE)
+        else
+          stored_items = result
+      end
+      total_price = 0
+      stored_items.each do |id, stored_item|
+        total_price += stored_item[:price].to_i
+      end
+      if account[:points_amount] < total_price
+        puts '---------------'
+        puts 'account balance: ' + account[:points_amount].to_s
+        puts 'total price: ' + total_price.to_s
+        puts '---------------'
+        return generate_response('fail', nil, 'USER DOES NOT HAVE ENOUGH POINTS', CLIENT_ERROR_CODE)
+      end
+      acc_points = account[:points_amount] - total_price
+      created_order = Order.create(account[:id], order[:is_joint_purchase], total_price)
+      if created_order.nil?
+        return generate_response('fail', nil, 'ERROR WHILE CREATING THE ORDER', SERVER_ERROR_CODE)
+      end
+      item_ids_hash.each do |item_id, amount|
+        ItemInOrder.create(created_order[:id], item_id, amount)
+      end
+      Account.update_points_amount(account[:id], acc_points)
+      stored_items.each do |id, stored_item|
+        in_stock = stored_item[:quantity] - item_ids_hash[id]
+        ShopItem.update_quantity(stored_item[:id], in_stock)
+      end
+      generate_response('ok', { id: created_order[:id] } ,nil, SUCCESSFUL_RESPONSE_CODE)
+    else
+      return generate_response('fail', nil, 'WRONG FORMAT OF ORDER', CLIENT_ERROR_CODE)
+    end
+  else
+    generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+  end
+end
