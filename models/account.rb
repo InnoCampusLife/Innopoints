@@ -8,7 +8,7 @@ class Account
     end
     # creation_date = DateTime.now
     #TODO fix the time
-    DB.query("INSERT INTO Accounts VALUES (default, #{owner}, '#{type}', #{points_amount}, NOW());")
+    DB.query("INSERT INTO Accounts VALUES (default, '#{owner}', '#{type}', #{points_amount}, NOW());")
     account = get_by_owner(owner)
     account
   end
@@ -29,7 +29,7 @@ class Account
 
   def self.get_by_owner_and_type(id, type)
     account = nil
-    DB.query("SELECT * FROM Accounts WHERE owner=#{id} AND type='#{type}';").each do |row|
+    DB.query("SELECT * FROM Accounts WHERE owner='#{id}' AND type='#{type}';").each do |row|
       account = {
           id: row[:id],
           owner: row[:owner],
@@ -55,7 +55,7 @@ class Account
 
   def self.get_by_owner(owner)
     account = nil
-    DB.query("SELECT * FROM Accounts WHERE owner=#{owner};").each do |row|
+    DB.query("SELECT * FROM Accounts WHERE owner='#{owner}';").each do |row|
       account = {
           id: row[:id],
           owner: row[:owner],

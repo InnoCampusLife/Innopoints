@@ -8,7 +8,7 @@ USE innopoints;
 
 CREATE TABLE IF NOT EXISTS Accounts (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  owner INT NOT NULL UNIQUE,
+  owner VARCHAR(255) NOT NULL UNIQUE,
   type ENUM('student', 'admin'),
   points_amount INT,
   creation_date TIMESTAMP NOT NULL
