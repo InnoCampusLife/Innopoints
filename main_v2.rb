@@ -235,6 +235,9 @@ post URL + '/accounts/:token/applications' do
     if account.nil?
       generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
     else
+      if application.nil?
+        return generate_response('fail', nil, 'APPLICATION PARAMETER IS NULL', CLIENT_ERROR_CODE)
+      end
       if account[:type] == 'admin' && application[:type] == 'personal'
         return generate_response('fail', nil, 'ADMIN CAN\'T CREATE PERSONAL APPLICATION', CLIENT_ERROR_CODE)
       end
@@ -569,6 +572,9 @@ put URL + '/accounts/:token/applications/:application_id' do
   #     files: [],
   #     comment: 'Some other comment'
   # }
+  if application.nil?
+    return generate_response('fail', nil, 'APPLICATION PARAMETER IS NULL', CLIENT_ERROR_CODE)
+  end
   resp = is_token_valid(token)
   if resp[:status] == 'ok'
     owner = resp[:result][:id]
@@ -898,6 +904,9 @@ post URL + '/admin/:admin_token/applications' do
   #     comment: 'Some comment'
   # }
   # application = params[:application]
+  if application.nil?
+    return generate_response('fail', nil, 'APPLICATION PARAMETER IS NULL', CLIENT_ERROR_CODE)
+  end
   if resp[:status] == 'ok'
     id = resp[:result][:id]
     account = Account.get_by_owner_and_type(id, 'admin')
@@ -1054,6 +1063,7 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
   account_id = params[:account_id]
   application_id = params[:application_id]
   application = params[:application]
+
   # application = {
   #     personal: {
   #         work: {
@@ -1075,6 +1085,9 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
   #     files: [],
   #     comment: 'Some other comment'
   # }
+  if application.nil?
+    return generate_response('fail', nil, 'APPLICATION PARAMETER IS NULL', CLIENT_ERROR_CODE)
+  end
   resp = is_token_valid(token)
   if resp[:status] == 'ok'
     owner = resp[:result][:id]
