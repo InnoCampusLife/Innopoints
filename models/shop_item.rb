@@ -61,7 +61,7 @@ class ShopItem
       end
     end
     stored_items = Hash.new
-    DB.query("SELECT id, quantity, price FROM Items WHERE #{query_string};").each do |row|
+    DB.query("SELECT * FROM Items WHERE #{query_string};", cast_booleans: true).each do |row|
       stored_items[row[:id]] = row
     end
     if stored_items.size < item_ids_hash.size

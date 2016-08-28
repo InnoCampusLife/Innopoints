@@ -14,6 +14,7 @@ INSERT INTO Activities (id, title, comment, for_approval, type, category_id, mai
 INSERT INTO Activities (id, title, comment, for_approval, type, category_id, main_option_exists, additional_exists, price) VALUES (DEFAULT , 'Activity 2', 'Comment 2', null, 'permanent',  2, 0,0,200);
 
 INSERT INTO ItemCategories (id, title) VALUES (DEFAULT , 'Clothes');
+INSERT INTO ItemCategories (id, title) VALUES (DEFAULT , 'Food');
 
 INSERT INTO Items (id, title, option1, value1, option2,
                    value2, option3, value3, quantity, price, category_id, possible_joint_purchase, max_buyers, parent)
@@ -24,3 +25,5 @@ INSERT INTO Items (id, title, option1, value1, option2, value2, option3, value3,
 VALUES (DEFAULT, 'Polo shirt', 'Size', 'S', 'Colour', 'Yellow', NULL, NULL, 2, 900, 1, 0, NULL, 1);
 INSERT INTO Items (id, title, option1, value1, option2, value2, option3, value3, quantity, price, category_id, possible_joint_purchase, max_buyers, parent)
 VALUES (DEFAULT, 'Polo shirt', 'Size', 'M', 'Colour', 'Yellow', NULL, NULL, 2, 900, 1, 0, NULL, 1);
+INSERT INTO Items (id, title, option1, value1, option2, value2, option3, value3, quantity, price, category_id, possible_joint_purchase, max_buyers, parent)
+VALUES (DEFAULT, 'Pizza', null, null, null, null, null, null, 2, 500, 2, 1, 2, null);

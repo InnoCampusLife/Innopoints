@@ -13,6 +13,7 @@ require_relative 'models/transaction'
 require_relative 'models/work'
 require_relative 'models/order'
 require_relative 'models/item_in_order'
+require_relative 'models/order_contributor'
 
 set :public_folder => '/public'
 
@@ -72,24 +73,29 @@ helpers do
 
   # CheckToken
   def is_token_valid(token)
-    # resp = HTTParty.get(ACCOUNTS_URL + token)
-    resp = Hash.new
-    if token == 'test'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 1
-      resp[:result][:role] = 'student'
-    elsif token == 'admin'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 2
-      resp[:result][:role] = 'moderator'
-    else
-      resp[:status] = 'error'
-    end
-
-    resp
-    # JSON.parse(resp.body, symbolize_names: true)
+    resp = HTTParty.get(ACCOUNTS_URL + token)
+    # resp = Hash.new
+    # if token == 'test'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 1
+    #   resp[:result][:role] = 'student'
+    # elsif token == 'admin'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 2
+    #   resp[:result][:role] = 'moderator'
+    # elsif token == 'student'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 3
+    #   resp[:result][:role] = 'student'
+    # else
+    #   resp[:status] = 'error'
+    # end
+    #
+    # resp
+    JSON.parse(resp.body, symbolize_names: true)
   end
 
   def is_activity_correct(activity_id, price)
@@ -455,7 +461,7 @@ get URL + '/accounts/:account_id/applications/:application_id/files/:file' do
   end
 end
 
-# DeletFile
+# DeleteFile
 delete URL + '/accounts/:token/applications/:application_id/files/:file' do
   content_type :json
   token = params[:token]
@@ -1268,37 +1274,37 @@ post URL + '/accounts/:token/orders' do
   content_type :json
   token = params[:token]
   resp = is_token_valid(token)
-  order = {
-      is_joint_purchase: false,
-      items: [
-          {
-              id: 1,
-              amount: 2
-          },
-          {
-              id: 2,
-              amount: 1
-          }
-      ],
-      contributors: nil
-  }
+  # order = {
+  #     is_joint_purchase: false,
+  #     items: [
+  #         {
+  #             id: 1,
+  #             amount: 2
+  #         },
+  #         {
+  #             id: 2,
+  #             amount: 1
+  #         }
+  #     ],
+  #     contributors: nil
+  # }
 
-  joint_order = {
-      is_joint_order: true,
+  order = {
+      is_joint_purchase: true,
       items: [ # only 1 item
           {
-              id: 1,
-              amount: 3
+              id: 5,
+              amount: 1
           }
       ],
       contributors: [
           {
-              id: 1, # uis id of author of order. It has to be first element of the array.
+              id: 1, # uis id of author of order
               points_amount: 200
           },
           {
-              id: 2, #uis id o some other person
-              points_amount: 300
+              id: 3, #uis id o some other person
+              points_amount: 200
           }
       ]
   }
@@ -1308,6 +1314,7 @@ post URL + '/accounts/:token/orders' do
     if account.nil?
       return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
     end
+    puts order
     if order[:is_joint_purchase].nil?
       puts '--------------------'
       puts 'wrong is_joint_purchase'
@@ -1315,7 +1322,83 @@ post URL + '/accounts/:token/orders' do
       return generate_response('fail', nil, 'WRONG FORMAT OF ORDER', CLIENT_ERROR_CODE)
     end
     if order[:is_joint_purchase] == true
-
+      items = order[:items]
+      if items.nil? || items.size != 1
+        puts '--------------------'
+        puts 'wrong items array'
+        puts '--------------------'
+        return generate_response('fail', nil, 'WRONG FORMAT OF ORDER', CLIENT_ERROR_CODE)
+      end
+      item_ids_hash = Hash.new
+      item = items[0]
+      item_id = is_integer_valid(item[:id])
+      item_amount = is_integer_valid(item[:amount])
+      if item_id.nil? || item_amount.nil? || item_id <= 0 || item_amount <= 0
+        return generate_response('fail', nil, 'WRONG FORMAT OF ITEM', CLIENT_ERROR_CODE)
+      end
+      item_ids_hash[item_id] = item_amount
+      result = ShopItem.check_quantity(item_ids_hash)
+      stored_items = nil
+      case result
+        when 'WRONG ITEM'
+          puts '------------------'
+          puts 'Some item is missing'
+          puts '------------------'
+          return generate_response('fail', nil, 'WRONG ITEM IN ORDER', CLIENT_ERROR_CODE)
+        when 'WRONG QUANTITY'
+          puts '------------------'
+          puts 'Too much for some item'
+          puts '------------------'
+          return generate_response('fail', nil, 'WRONG QUANTITY OF AN ITEM', CLIENT_ERROR_CODE)
+        else
+          stored_items = result
+      end
+      stored_item = stored_items[item_id]
+      puts stored_item
+      unless stored_item[:possible_joint_purchase]
+        return generate_response('fail', nil, 'JOINT PURCHASE IS NOT POSSIBLE', CLIENT_ERROR_CODE)
+      end
+      contributors = order[:contributors]
+      if contributors.nil? || contributors.size < 2 || contributors.size > stored_item[:max_buyers]
+        return generate_response('fail', nil, 'WRONG CONTRIBUTORS FORMAT', CLIENT_ERROR_CODE)
+      end
+      author_found = false
+      total_points = 0
+      contributor_ids_hash = Hash.new
+      contributors.each do |contributor|
+        contributor_id = is_integer_valid(contributor[:id])
+        contributor_points = is_integer_valid(contributor[:points_amount])
+        if contributor_id == id
+          author_found = true
+        end
+        if contributor_id.nil? || contributor_points.nil?
+          return generate_response('fail', nil, 'WRONG IN CONTRIBUTOR', CLIENT_ERROR_CODE)
+        end
+        contributor_account = Account.get_by_owner(contributor_id)
+        if contributor_account.nil?
+          return generate_response('fail', nil, 'CONTRIBUTOR DOES NOT EXIST', CLIENT_ERROR_CODE)
+        end
+        if contributor_account[:type] == 'admin'
+          return generate_response('fail', nil, 'WRONG CONTRIBUTOR', CLIENT_ERROR_CODE)
+        end
+        if contributor_account[:points_amount] < contributor_points
+          return generate_response('fail', nil, 'WRONG CONTRIBUTOR POINTS AMOUNT', CLIENT_ERROR_CODE)
+        end
+        total_points += contributor_points
+        contributor_ids_hash[contributor_account[:id]] = contributor_points
+      end
+      unless author_found
+        return generate_response('fail', nil, 'AUTHOR IS NOT FOUND AMONG CONTRIBUTORS', CLIENT_ERROR_CODE)
+      end
+      created_order = Order.create(id, order[:is_joint_purchase], total_points)
+      if created_order.nil?
+        return generate_response('fail', nil, 'ERROR WHILE CREATING ORDER', SERVER_ERROR_CODE)
+      end
+      ItemInOrder.create(created_order[:id], item_id, item_amount)
+      contributor_ids_hash.each do |acc_id, points|
+        OrderContributor.create(created_order[:id], acc_id, points)
+      end
+      generate_response('ok', { id: created_order[:id] } ,nil, SUCCESSFUL_RESPONSE_CODE)
     elsif order[:is_joint_purchase] == false
       items = order[:items]
       if items.nil? || items.size == 0
@@ -1385,3 +1468,5 @@ post URL + '/accounts/:token/orders' do
     generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
   end
 end
+
+# get URL + '/accounts/:token'
