@@ -199,34 +199,35 @@ post URL + '/accounts/:token/applications' do
   content_type :json
   token = params[:token]
   resp = is_token_valid(token)
-  application = {
-      type: 'personal', # personal/group
-      personal: {
-          work: {
-              activity: {
-                  id: '2',
-                  title: 'hui',
-                  type: 'permanent',
-                  category: {
-                      id: '2',
-                      title: 'Sport'
-                  },
-                  price: 200
-              },
-              amount: nil, # null for permanent actxivity
-          }
-      },
-      group: nil,
-      files: [
+  application = params[:application]
+  # application = {
+  #     type: 'personal', # personal/group
+  #     personal: {
+  #         work: {
+  #             activity: {
+  #                 id: '2',
+  #                 title: 'hui',
+  #                 type: 'permanent',
+  #                 category: {
+  #                     id: '2',
+  #                     title: 'Sport'
+  #                 },
+  #                 price: 200
+  #             },
+  #             amount: nil, # null for permanent actxivity
+  #         }
+  #     },
+  #     group: nil,
+  #     files: [
           # {
           #     filename: 'weather-1.jpg',
           #     tempfile: '#<Tempfile:/tmp/RackMultipart20160624-29189-m0ztz3.jpg>',
           #     type: 'image/jpeg',
           #     head: 'Content-Disposition: form-data; name=\"test_file\"; filename=\"weather-1.jpg\"\r\nContent-Type: image/jpeg\r\n"'
           # }
-      ],
-      comment: 'Some comment'
-  }
+      # ],
+      # comment: 'Some comment'
+  # }
   # application = params[:application]
   if resp[:status] == 'ok'
     id = resp[:result][:id]
@@ -546,27 +547,28 @@ put URL + '/accounts/:token/applications/:application_id' do
   content_type :json
   token = params[:token]
   application_id = params[:application_id]
-  application = {
-      personal: {
-          work: {
-              activity: {
-                  id: '1',
-                  title: 'Активность 1',
-                  type: 'hourly',
-                  category: {
-                      id: '1',
-                      title: 'Sport'
-                  },
-                  price: 100
-              },
-              amount: 1, # null for permanent activity
-          }
-      },
-      type: 'personal',
-      group: nil,
-      files: [],
-      comment: 'Some other comment'
-  }
+  application = params[:application]
+  # application = {
+  #     personal: {
+  #         work: {
+  #             activity: {
+  #                 id: '1',
+  #                 title: 'Активность 1',
+  #                 type: 'hourly',
+  #                 category: {
+  #                     id: '1',
+  #                     title: 'Sport'
+  #                 },
+  #                 price: 100
+  #             },
+  #             amount: 1, # null for permanent activity
+  #         }
+  #     },
+  #     type: 'personal',
+  #     group: nil,
+  #     files: [],
+  #     comment: 'Some other comment'
+  # }
   resp = is_token_valid(token)
   if resp[:status] == 'ok'
     owner = resp[:result][:id]
@@ -862,38 +864,39 @@ post URL + '/admin/:admin_token/applications' do
   content_type :json
   token = params[:admin_token]
   resp = is_token_valid(token)
-  application = {
-      type: 'group', # personal/group
-      group: {
-          work: [
-              {
-                  actor: 1,
-                  activity: {
-                      id: '1',
-                      title: 'Активность 1',
-                      type: 'hourly',
-                      category: {
-                          id: 'some id',
-                          title: 'Sport'
-                      },
-                      price: 100
-                  },
-                  amount: 2, # null for permanent actxivity
-                  total_price: 200
-              }
-          ]
-      },
-      personal: nil,
-      files: [
+  application = params[:application]
+  # application = {
+  #     type: 'group', # personal/group
+  #     group: {
+  #         work: [
+  #             {
+  #                 actor: 1,
+  #                 activity: {
+  #                     id: '1',
+  #                     title: 'Активность 1',
+  #                     type: 'hourly',
+  #                     category: {
+  #                         id: 'some id',
+  #                         title: 'Sport'
+  #                     },
+  #                     price: 100
+  #                 },
+  #                 amount: 2, # null for permanent actxivity
+  #                 total_price: 200
+  #             }
+  #         ]
+  #     },
+  #     personal: nil,
+  #     files: [
           # {
           #     filename: 'weather-1.jpg',
           #     tempfile: '#<Tempfile:/tmp/RackMultipart20160624-29189-m0ztz3.jpg>',
           #     type: 'image/jpeg',
           #     head: 'Content-Disposition: form-data; name=\"test_file\"; filename=\"weather-1.jpg\"\r\nContent-Type: image/jpeg\r\n"'
           # }
-      ],
-      comment: 'Some comment'
-  }
+  #     ],
+  #     comment: 'Some comment'
+  # }
   # application = params[:application]
   if resp[:status] == 'ok'
     id = resp[:result][:id]
@@ -1050,27 +1053,28 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
   token = params[:admin_token]
   account_id = params[:account_id]
   application_id = params[:application_id]
-  application = {
-      personal: {
-          work: {
-              activity: {
-                  id: '1',
-                  title: 'Активность 1',
-                  type: 'hourly',
-                  category: {
-                      id: '1',
-                      title: 'Sport'
-                  },
-                  price: 100
-              },
-              amount: 1, # null for permanent activity
-          }
-      },
-      type: 'personal',
-      group: nil,
-      files: [],
-      comment: 'Some other comment'
-  }
+  application = params[:application]
+  # application = {
+  #     personal: {
+  #         work: {
+  #             activity: {
+  #                 id: '1',
+  #                 title: 'Активность 1',
+  #                 type: 'hourly',
+  #                 category: {
+  #                     id: '1',
+  #                     title: 'Sport'
+  #                 },
+  #                 price: 100
+  #             },
+  #             amount: 1, # null for permanent activity
+  #         }
+  #     },
+  #     type: 'personal',
+  #     group: nil,
+  #     files: [],
+  #     comment: 'Some other comment'
+  # }
   resp = is_token_valid(token)
   if resp[:status] == 'ok'
     owner = resp[:result][:id]
@@ -1274,6 +1278,7 @@ post URL + '/accounts/:token/orders' do
   content_type :json
   token = params[:token]
   resp = is_token_valid(token)
+  order = params[:order]
   # order = {
   #     is_joint_purchase: false,
   #     items: [
@@ -1289,25 +1294,25 @@ post URL + '/accounts/:token/orders' do
   #     contributors: nil
   # }
 
-  order = {
-      is_joint_purchase: true,
-      items: [ # only 1 item
-          {
-              id: 5,
-              amount: 1
-          }
-      ],
-      contributors: [
-          {
-              id: 1, # uis id of author of order
-              points_amount: 200
-          },
-          {
-              id: 3, #uis id o some other person
-              points_amount: 200
-          }
-      ]
-  }
+  # order = {
+  #     is_joint_purchase: true,
+  #     items: [ # only 1 item
+  #         {
+  #             id: 5,
+  #             amount: 1
+  #         }
+  #     ],
+  #     contributors: [
+  #         {
+  #             id: 1, # uis id of author of order
+  #             points_amount: 200
+  #         },
+  #         {
+  #             id: 3, #uis id o some other person
+  #             points_amount: 200
+  #         }
+  #     ]
+  # }
   if resp[:status] == 'ok'
     id = resp[:result][:id]
     account = Account.get_by_owner(id)
