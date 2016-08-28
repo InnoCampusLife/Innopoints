@@ -73,29 +73,29 @@ helpers do
 
   # CheckToken
   def is_token_valid(token)
-    resp = HTTParty.get(ACCOUNTS_URL + token)
-    # resp = Hash.new
-    # if token == 'test'
-    #   resp[:status] = 'ok'
-    #   resp[:result] = Hash.new
-    #   resp[:result][:id] = 1
-    #   resp[:result][:role] = 'student'
-    # elsif token == 'admin'
-    #   resp[:status] = 'ok'
-    #   resp[:result] = Hash.new
-    #   resp[:result][:id] = 2
-    #   resp[:result][:role] = 'moderator'
-    # elsif token == 'student'
-    #   resp[:status] = 'ok'
-    #   resp[:result] = Hash.new
-    #   resp[:result][:id] = 3
-    #   resp[:result][:role] = 'student'
-    # else
-    #   resp[:status] = 'error'
-    # end
+    # resp = HTTParty.get(ACCOUNTS_URL + token)
+    resp = Hash.new
+    if token == 'test'
+      resp[:status] = 'ok'
+      resp[:result] = Hash.new
+      resp[:result][:id] = 1
+      resp[:result][:role] = 'student'
+    elsif token == 'admin'
+      resp[:status] = 'ok'
+      resp[:result] = Hash.new
+      resp[:result][:id] = 2
+      resp[:result][:role] = 'moderator'
+    elsif token == 'student'
+      resp[:status] = 'ok'
+      resp[:result] = Hash.new
+      resp[:result][:id] = 3
+      resp[:result][:role] = 'student'
+    else
+      resp[:status] = 'error'
+    end
     #
-    # resp
-    JSON.parse(resp.body, symbolize_names: true)
+    resp
+    # JSON.parse(resp.body, symbolize_names: true)
   end
 
   def is_activity_correct(activity_id, price)
@@ -229,6 +229,9 @@ post URL + '/accounts/:token/applications' do
       # comment: 'Some comment'
   # }
   # application = params[:application]
+  puts '----------------------------------------'
+  puts params
+  puts '----------------------------------------'
   if resp[:status] == 'ok'
     id = resp[:result][:id]
     account = Account.get_by_owner(id)
