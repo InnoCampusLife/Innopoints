@@ -26,7 +26,16 @@ SUCCESSFUL_RESPONSE_CODE = 200
 
 helpers do
 
-  def is_integer_valid(integer)
+  def validate_input
+    begin
+      input = JSON.parse(request.env["rack.input"].read, symbolize_names: true)
+    rescue
+      { status: 'fail', result: 'INPUT HAS TO BE JSON' }
+    end
+      { status: 'ok', result: input}
+  end
+
+  def validate_integer(integer)
     begin
       integer = Integer(integer)
       integer
@@ -71,9 +80,18 @@ helpers do
     resp.to_json
   end
 
+  def is_uis_user_exists(token, id)
+    resp = JSON.parse(HTTParty.get(ACCOUNTS_URL + token + '/exists?id=' + id), symbolize_names: true)
+    if resp[:status] == 'ok' && resp[:result]
+      return true
+    end
+    false
+  end
+
   # CheckToken
   def is_token_valid(token)
     resp = HTTParty.get(ACCOUNTS_URL + token)
+    JSON.parse(resp.body, symbolize_names: true)
     # resp = Hash.new
     # if token == 'test'
     #   resp[:status] = 'ok'
@@ -93,22 +111,67 @@ helpers do
     # else
     #   resp[:status] = 'error'
     # end
-    # #
     # resp
-    JSON.parse(resp.body, symbolize_names: true)
   end
 
-  def is_activity_correct(activity_id, price)
-    activity = Activity.get_by_id(activity_id)
-    if activity.nil?
-      return false
+  def validate_application(application, token, author_id)
+    unless application.is_a?(Hash)
+      return { status: 'fail', description: 'APPLICATION HAS TO BE AN OBJECT' }
     end
-    if activity[:price] != price
-      return false
+    if application[:type].nil? || (application[:type] != 'personal' && application[:type] != 'group')
+      return { status: 'fail', description: 'WRONG TYPE' }
     end
-    true
+    if application[:work].nil? || !application[:work].is_a?(Array)
+      return { status: 'fail', description: 'WORK HAS TO BE AN ARRAY' }
+    end
+    if application[:work].size == 0
+      return { status: 'fail', description: 'WORK CAN NOT BE EMPTY' }
+    end
+    if application[:type] == 'personal' && application[:work].size != 1
+      return { status: 'fail', description: 'PERSONAL APPLICATION HAS TO CONTAIN ONLY ONE WORK'}
+    end
+    exists_actors = Array.new
+    application[:work].each do |work|
+      if work[:actor].nil? || work[:activity_id].nil?
+        return { status: 'fail', description: 'ACTOR AND ACTIVITY_ID CAN NOT TO BE NULL' }
+      end
+      if work[:actor].length < 24 || work[:actor] > 128
+        return { status: 'fail', description: 'ACTOR\'S ID LENGTH HAS TO BE BETWEEN 24 and 128' }
+      end
+      if exists_actors.include?(work[:actor])
+        return { status: 'fail', description: 'AN USER CAN BE PRESENT ONLY ONCE IN THE APPLICATION' }
+      else
+        exists_actors.push(work[:actor])
+      end
+      work[:activity_id] = validate_integer(work[:activity_id])
+      if work[:activity_id].nil?
+        return { status: 'fail', description: 'WRONG ACTIVITY ID' }
+      end
+      activity = Activity.get_by_id(work[:activity_id])
+      if activity.nil?
+        return { status: 'fail', description: 'ACTIVITY DOES NOT EXIST' }
+      end
+      if (activity[:type] == 'permanent' && !work[:amount].nil?) || ((activity[:type] == 'hourly' || activity[:type] == 'quantity') && (validate_integer(work[:amount]).nil? || validate_integer(work[:amount]) <= 0 ))
+        return { status: 'fail', description: 'WRONG AMOUNT' }
+      end
+      account = Account.get_by_owner(work[:actor])
+      if account.nil?
+        if is_uis_user_exists(token, work[:actor])
+          account = Account.create(work[:actor], 'student')
+        else
+          return { status: 'fail', description: 'ACTOR DOES NOT EXIST IN UIS' }
+        end
+      end
+      if account[:type] == 'admin'
+        return { status: 'fail', description: 'ADMIN CAN\'T BE AN ACTOR' }
+      end
+      if application[:type] == 'personal' && (account[:id] != author_id || account[:type] == 'admin')
+        return { status: 'fail', description: 'IN PERSONAL APPLICATION AUTHOR HAS TO BE THE ACTOR' }
+      end
+      work[:actor] = account[:id]
+    end
+    { status: 'ok' }
   end
-
 
 end
 # GetCategories
@@ -194,106 +257,79 @@ post URL + '/accounts/:token' do
   end
 end
 
-# CreateApplication
+=begin
+CreateApplication
+application = {
+  type: 'personal', //'group'
+  work: [
+    {
+      {
+            actor: 1, // id of user in accounts microservice. Has to be the same as id of user with :token if type personal
+            activity_id: 1 // id of activity
+            amount: 3, # null for permanent activities
+        },
+        {
+          ...
+        }
+    }
+  ],
+  comment: ""
+}
+=end
 post URL + '/accounts/:token/applications' do
   content_type :json
+  application = params[:application]
+  res = validate_input
+  if res[:status] == 'fail'
+    return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+  end
+  input = res[:result]
+  if input[:application].nil?
+    return generate_response('fail', nil, 'APPLICATION IS NULL', CLIENT_ERROR_CODE)
+  end
+  application = input[:application]
   token = params[:token]
   resp = is_token_valid(token)
-  application = params[:application]
-  # application = {
-  #     type: 'personal', # personal/group
-  #     personal: {
-  #         work: {
-  #             activity: {
-  #                 id: '2',
-  #                 title: 'hui',
-  #                 type: 'permanent',
-  #                 category: {
-  #                     id: '2',
-  #                     title: 'Sport'
-  #                 },
-  #                 price: 200
-  #             },
-  #             amount: nil, # null for permanent actxivity
-  #         }
-  #     },
-  #     group: nil,
-  #     files: [
-          # {
-          #     filename: 'weather-1.jpg',
-          #     tempfile: '#<Tempfile:/tmp/RackMultipart20160624-29189-m0ztz3.jpg>',
-          #     type: 'image/jpeg',
-          #     head: 'Content-Disposition: form-data; name=\"test_file\"; filename=\"weather-1.jpg\"\r\nContent-Type: image/jpeg\r\n"'
-          # }
-      # ],
-      # comment: 'Some comment'
-  # }
-  # application = params[:application]
-  puts '----------------------------------------'
-  puts params
-  puts '----------------------------------------'
   if resp[:status] == 'ok'
     id = resp[:result][:id]
     account = Account.get_by_owner(id)
     if account.nil?
       generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
     else
-      if application.nil?
-        return generate_response('fail', nil, 'APPLICATION PARAMETER IS NULL', CLIENT_ERROR_CODE)
-      end
-      if account[:type] == 'admin' && application[:type] == 'personal'
-        return generate_response('fail', nil, 'ADMIN CAN\'T CREATE PERSONAL APPLICATION', CLIENT_ERROR_CODE)
-      end
-      works = Array.new
-      case application[:type]
-        when 'personal'
-          work = application[:personal][:work]
-          unless is_activity_correct(work[:activity][:id], work[:activity][:price])
-            return generate_response('fail', nil, 'ERROR IN AN ACTIVITY', CLIENT_ERROR_CODE)
-          end
-          work[:actor] = account[:owner]
-          works.push(work)
-        when 'group'
-          application[:group][:work].each do |work|
-            unless is_activity_correct(work[:activity][:id], work[:activity][:price])
-              return generate_response('fail', nil, 'ERROR IN AN ACTIVITY', CLIENT_ERROR_CODE)
-            end
-          end
-          works = application[:group][:work]
+      res = validate_application(application, token, account[:id])
+      if res[:status] == 'fail'
+        return generate_response('fail', nil, res[:description], CLIENT_ERROR_CODE)
       end
       created_application = Application.create(account[:id], application[:type], application[:comment])
       if created_application.nil?
         return generate_response('fail', nil, 'ERROR WHILE CREATING APPLICATION OCCURED', SERVER_ERROR_CODE)
       end
-      works.each do |work|
+      application[:work].each do |work|
         actor_account = Account.get_by_owner(work[:actor])
-        if actor_account.nil?
-          actor_account = Account.create(work[:actor], 'student')
-        end
-        created_work = Work.create(actor_account[:id], work[:activity][:id], created_application[:id], work[:amount])
+        created_work = Work.create(actor_account[:id], work[:activity_id], created_application[:id], work[:amount])
         if created_work.nil?
           return generate_response('fail', nil, 'ERROR WHILE CREATING WORK OCCURED', SERVER_ERROR_CODE)
         end
       end
       folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + created_application[:id].to_s
       FileUtils::mkdir_p(folder)
-      application[:files].each do |file|
-        file_name = file[:filename]
-        name_parts = file_name.split('.')
-        extension = ''
-        (1..(name_parts.length - 1)).each { |i|
-          extension += ('.' + name_parts[i])
-        }
-        created_file = StoredFile.create(created_application[:id],file[:filename], file[:type], extension)
-        if created_file.nil?
-          return generate_response('fail', nil, 'ERROR WHILE CREATING FILE OCCURED', SERVER_ERROR_CODE)
-        end
-        File.open(folder + '/' + created_file[:id].to_s + extension, 'w') do |f|
-          f.write(file[:tempfile].read)
-        end
-        download_link = URL + '/accounts/' + token + '/applications/' + created_application[:id] + '/files/' + created_file[:id].to_s + extension
-        StoredFile.update_download_link(created_file[:id], download_link)
-      end
+      # application[:files].each do |file|
+      #   file_name = file[:filename]
+      #   name_parts = file_name.split('.')
+      #   extension = ''
+      #   (1..(name_parts.length - 1)).each { |i|
+      #     extension += ('.' + name_parts[i])
+      #   }
+      #   created_file = StoredFile.create(created_application[:id],file[:filename], file[:type], extension)
+      #   if created_file.nil?
+      #     return generate_response('fail', nil, 'ERROR WHILE CREATING FILE OCCURED', SERVER_ERROR_CODE)
+      #   end
+      #   File.open(folder + '/' + created_file[:id].to_s + extension, 'w') do |f|
+      #     f.write(file[:tempfile].read)
+      #   end
+      #   download_link = URL + '/accounts/' + token + '/applications/' + created_application[:id] + '/files/' + created_file[:id].to_s + extension
+      #   StoredFile.update_download_link(created_file[:id], download_link)
+      # end
       generate_response('ok', { :id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
     end
   else
@@ -553,7 +589,11 @@ put URL + '/accounts/:token/applications/:application_id' do
   content_type :json
   token = params[:token]
   application_id = params[:application_id]
-  application = params[:application]
+  res = validate_input
+  if res[:status] == 'fail'
+    return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+  end
+  application = res[:result][:application]
   # application = {
   #     personal: {
   #         work: {
@@ -735,7 +775,7 @@ get URL + '/admin/:admin_token/accounts/:account_id' do
     if account.nil?
       return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
     else
-      account_id = is_integer_valid(params[:account_id])
+      account_id = validate_integer(params[:account_id])
       if account_id.nil?
         return generate_response('fail', nil, 'WRONG ACCOUNT ID', CLIENT_ERROR_CODE)
       end
@@ -763,7 +803,7 @@ put URL + '/admin/:admin_token/accounts/:account_id' do
     if account.nil?
       return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
     else
-      account_id = is_integer_valid(params[:account_id])
+      account_id = validate_integer(params[:account_id])
       if account_id.nil?
         return generate_response('fail', nil, 'WRONG ACCOUNT ID', CLIENT_ERROR_CODE)
       end
@@ -774,7 +814,7 @@ put URL + '/admin/:admin_token/accounts/:account_id' do
         if target_account[:type] == 'admin'
           generate_response('fail', nil, 'IT IS NOT POSSIBLE TO UPDATE POINTS', CLIENT_ERROR_CODE)
         else
-          points_amount = is_integer_valid(params[:points_amount])
+          points_amount = validate_integer(params[:points_amount])
           if points_amount.nil?
             return generate_response('fail', nil, 'WRONG POINTS AMOUNT', CLIENT_ERROR_CODE)
           end
@@ -920,7 +960,7 @@ post URL + '/admin/:admin_token/applications' do
         return generate_response('fail', nil, 'ADMIN CAN\'T CREATE PERSONAL APPLICATION', CLIENT_ERROR_CODE)
       end
       application[:group][:work].each do |work|
-        activity_id = is_integer_valid(work[:activity][:id])
+        activity_id = validate_integer(work[:activity][:id])
         if activity_id.nil?
           return generate_response('fail', nil, 'WRONG ACTIVITY ID', CLIENT_ERROR_CODE)
         end
@@ -980,11 +1020,11 @@ get URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
     if account.nil?
       return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
     end
-    target_account_id = is_integer_valid(params[:account_id])
+    target_account_id = validate_integer(params[:account_id])
     if target_account_id.nil?
       return generate_response('fail', nil, 'WRONG TARGET ACCOUNT ID', CLIENT_ERROR_CODE)
     end
-    application_id = is_integer_valid(params[:application_id])
+    application_id = validate_integer(params[:application_id])
     if application_id.nil?
       return generate_response('fail', nil, 'WRONG TARGET APPLICATION ID', CLIENT_ERROR_CODE)
     end
@@ -1009,11 +1049,11 @@ put URL + '/admin/:admin_token/accounts/:account_id/applications/:application_id
     if account.nil?
       return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
     end
-    target_account_id = is_integer_valid(params[:account_id])
+    target_account_id = validate_integer(params[:account_id])
     if target_account_id.nil?
       return generate_response('fail', nil, 'WRONG TARGET ACCOUNT ID', CLIENT_ERROR_CODE)
     end
-    application_id = is_integer_valid(params[:application_id])
+    application_id = validate_integer(params[:application_id])
     if application_id.nil?
       return generate_response('fail', nil, 'WRONG TARGET APPLICATION ID', CLIENT_ERROR_CODE)
     end
@@ -1238,7 +1278,7 @@ get URL + '/shop/items/category/:category_id' do
   limit =  validate_limit(params[:limit])
   fields = params[:fields]
   order = params[:order]
-  category_id = is_integer_valid(params[:category_id])
+  category_id = validate_integer(params[:category_id])
   if category_id.nil?
     return generate_response('fail', nil, 'ERROR IN CATEGORY ID', CLIENT_ERROR_CODE)
   end
@@ -1277,7 +1317,7 @@ end
 # GetItem
 get URL + '/shop/items/:id' do
   content_type :json
-  item_id = is_integer_valid(params[:id])
+  item_id = validate_integer(params[:id])
   if item_id.nil?
     return generate_response('fail', nil, 'WRONG ITEM ID', CLIENT_ERROR_CODE)
   end
@@ -1352,8 +1392,8 @@ post URL + '/accounts/:token/orders' do
       end
       item_ids_hash = Hash.new
       item = items[0]
-      item_id = is_integer_valid(item[:id])
-      item_amount = is_integer_valid(item[:amount])
+      item_id = validate_integer(item[:id])
+      item_amount = validate_integer(item[:amount])
       if item_id.nil? || item_amount.nil? || item_id <= 0 || item_amount <= 0
         return generate_response('fail', nil, 'WRONG FORMAT OF ITEM', CLIENT_ERROR_CODE)
       end
@@ -1387,8 +1427,8 @@ post URL + '/accounts/:token/orders' do
       total_points = 0
       contributor_ids_hash = Hash.new
       contributors.each do |contributor|
-        contributor_id = is_integer_valid(contributor[:id])
-        contributor_points = is_integer_valid(contributor[:points_amount])
+        contributor_id = validate_integer(contributor[:id])
+        contributor_points = validate_integer(contributor[:points_amount])
         if contributor_id == id
           author_found = true
         end
@@ -1430,8 +1470,8 @@ post URL + '/accounts/:token/orders' do
       end
       item_ids_hash = Hash.new
       items.each do |item|
-        item_id = is_integer_valid(item[:id])
-        item_amount = is_integer_valid(item[:amount])
+        item_id = validate_integer(item[:id])
+        item_amount = validate_integer(item[:amount])
         if item_id.nil? || item_amount.nil? || item_id <= 0 || item_amount <= 0
           return generate_response('fail', nil, 'WRONG FORMAT OF ITEMS', CLIENT_ERROR_CODE)
         end
