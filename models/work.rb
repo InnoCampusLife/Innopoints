@@ -38,16 +38,26 @@ class Work
     update_query = ''
     counter = hash.size
     hash.each do |key, value|
+      if hash.key?(:amount)
+        if key == :amount
+          update_query += "amount=null"
+          next
+        end
+      end
       update_query += "#{key}=#{value}"
       counter -= 1
       if counter > 0
         update_query += ', '
       end
     end
-    DB.query("UPDATE Works SET #{update_query} WHERE id=#{work_id}")
+    DB.query("UPDATE Works SET #{update_query} WHERE id=#{work_id};")
   end
 
   def self.delete_all_by_application_id(application_id)
-    DB.query("DELETE FROM Works WHERE application_id=#{application_id}")
+    DB.query("DELETE FROM Works WHERE application_id=#{application_id};")
+  end
+
+  def self.delete_by_id(id)
+    DB.query("DELETE FROM Works WHERE id=#{id};")
   end
 end

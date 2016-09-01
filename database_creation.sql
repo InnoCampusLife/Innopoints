@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS Files (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   filename TEXT NOT NULL ,
   type TEXT NOT NULL ,
+  extension VARCHAR(30),
   download_link TEXT NOT NULL,
   application_id INT,
   FOREIGN KEY (application_id) REFERENCES Applications(id)

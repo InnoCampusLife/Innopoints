@@ -8,7 +8,7 @@ class Application
 
   def self.create(author, type, comment)
     if comment.nil?
-      comment = 'NULL'
+      comment = ''
     end
     DB.query("INSERT INTO Applications VALUES (default,#{author}, '#{type}', '#{comment}', 'in_process', NOW());")
     id = DB.last_id
@@ -97,40 +97,22 @@ class Application
     result_application[:status] = application[:status]
     result_application[:creation_date] = application[:creation_date]
     works = Work.get_list_by_application_id(application[:id])
-    case application[:type]
-      when 'personal'
-        result_application[:personal] = Hash.new
-        result_application[:personal][:work] = Hash.new
-        activity = Activity.get_by_id_with_category(works[0][:activity_id])
-        result_application[:personal][:work][:activity] = activity
-        result_application[:personal][:work][:amount] = works[0][:amount]
-        total_price = nil
-        if activity[:type] == 'permanent'
-          total_price = activity[:price]
-        else
-          total_price = works[0][:amount].to_i * activity[:price].to_i
-        end
-        result_application[:personal][:work][:total_price] = total_price
-        result_application[:group] = nil
-      when 'group'
-        result_application[:group] = Hash.new
-        result_application[:group][:work] = Array.new
-        works.each do |work|
-          work_account = Account.get_by_id(work[:actor])
-          activity = Activity.get_by_id_with_category(work[:activity_id])
-          total_price = nil
-          if activity[:type] == 'permanent'
-            total_price = activity[:price]
-          else
-            total_price = work[:amount].to_i * activity[:price].to_i
-          end
-          result_application[:group][:work].push({
-              :activity => activity,
-              :actor => work_account[:owner],
-              :amount => work[:amount],
-              :total_price => total_price
-                                                 })
-        end
+    result_application[:work] = Array.new
+    works.each do |work|
+      work_account = Account.get_by_id(work[:actor])
+      activity = Activity.get_by_id_with_category(work[:activity_id])
+      total_price = nil
+      if activity[:type] == 'permanent'
+        total_price = activity[:price]
+      else
+        total_price = work[:amount].to_i * activity[:price].to_i
+      end
+      result_application[:work].push({
+                                                 :activity => activity,
+                                                 :actor => work_account[:owner],
+                                                 :amount => work[:amount],
+                                                 :total_price => total_price
+                                             })
     end
     files = StoredFile.get_list_by_application_id(application[:id])
     result_application[:files] = files

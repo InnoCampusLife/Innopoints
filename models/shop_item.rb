@@ -1,5 +1,6 @@
 require_relative '../database_handler'
 require_relative '../config'
+require_relative 'item_category'
 
 class ShopItem
   def self.get_list(skip, limit, fields_to_sort, order)
@@ -79,6 +80,7 @@ class ShopItem
     result_item = Hash.new
     result_item[:combinations] = Hash.new
     parent_item = nil
+    image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
     DB.query("SELECT * FROM Items WHERE id=#{id} AND parent is null;", cast_booleans: true).each do |row|
       parent_item = row
       tmp = Hash.new
@@ -91,7 +93,11 @@ class ShopItem
       end
       tmp_value[:id] = row[:id]
       tmp_value[:quantity] = row[:quantity]
+      category = ItemCategory.get_by_id(row[:category_id])
+      result_item[:category] = category
+      result_item[:title] = row[:title]
       result_item[:combinations][tmp] = tmp_value
+      result_item[:image_link] = image_link + '/' + row[:id].to_s + '.jpg'
     end
     if parent_item.nil?
       return nil
