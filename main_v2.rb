@@ -20,9 +20,6 @@ set :public_folder => '/public'
 set :bind, WEB_HOST
 set :port, WEB_PORT
 
-SERVER_ERROR_CODE = 500
-CLIENT_ERROR_CODE = 400
-SUCCESSFUL_RESPONSE_CODE = 200
 
 helpers do
 
@@ -38,6 +35,29 @@ helpers do
       return { status: 'fail', result: 'INPUT HAS TO BE JSON' }
     end
       { status: 'ok', result: input}
+  end
+
+  # order = {
+  #     is_joint_purchase: false,
+  #     items: [
+  #         {1
+  #             id: 1,
+  #             amount: 2
+  #         },
+  #         {
+  #             id: 2,
+  #             amount: 1
+  #         }
+  #     ],
+  #     contributors: nil
+  # }
+  def validate_order(order)
+    unless order.is_a?(Hash)
+      return { status: 'fail', description: 'Order has to be an object' }
+    end
+    if order[:is_joint_purchase].nil? || items.nil?
+      return { status: 'fail', description: 'is_joint_purchase and items can not be null' }
+    end
   end
 
   def validate_integer(integer)
@@ -95,29 +115,29 @@ helpers do
 
   # CheckToken
   def is_token_valid(token)
-    # resp = HTTParty.get(ACCOUNTS_URL + token)
-    # JSON.parse(resp.body, symbolize_names: true)
+    resp = HTTParty.get(ACCOUNTS_URL + token)
+    JSON.parse(resp.body, symbolize_names: true)
     # TODO CHANGE
-    resp = Hash.new
-    if token == 'test'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 1
-      resp[:result][:role] = 'student'
-    elsif token == 'admin'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 2
-      resp[:result][:role] = 'moderator'
-    elsif token == 'student'
-      resp[:status] = 'ok'
-      resp[:result] = Hash.new
-      resp[:result][:id] = 3
-      resp[:result][:role] = 'student'
-    else
-      resp[:status] = 'error'
-    end
-    resp
+    # resp = Hash.new
+    # if token == 'test'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 1
+    #   resp[:result][:role] = 'student'
+    # elsif token == 'admin'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 2
+    #   resp[:result][:role] = 'moderator'
+    # elsif token == 'student'
+    #   resp[:status] = 'ok'
+    #   resp[:result] = Hash.new
+    #   resp[:result][:id] = 3
+    #   resp[:result][:role] = 'student'
+    # else
+    #   resp[:status] = 'error'
+    # end
+    # resp
   end
 
   def validate_application(application, token, author_id)
@@ -1221,11 +1241,16 @@ post URL + '/accounts/:token/orders' do
   content_type :json
   token = params[:token]
   resp = is_token_valid(token)
+  input = validate_input
+  if input[:status] == 'fail'
+    return generate_response('fail', nil, input[:result], CLIENT_ERROR_CODE)
+  end
+  return 'hui'
   order = params[:order]
   # order = {
   #     is_joint_purchase: false,
   #     items: [
-  #         {
+  #         {1
   #             id: 1,
   #             amount: 2
   #         },
