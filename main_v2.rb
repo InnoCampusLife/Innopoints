@@ -21,6 +21,10 @@ set :bind, WEB_HOST
 set :port, WEB_PORT
 
 
+SERVER_ERROR_CODE = 500
+CLIENT_ERROR_CODE = 400
+SUCCESSFUL_RESPONSE_CODE = 200
+
 helpers do
 
   def validate_input
