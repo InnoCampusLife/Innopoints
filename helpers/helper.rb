@@ -176,29 +176,29 @@ module ValidationHelpers
 
     # CheckToken
     def is_token_valid(token)
-      # resp = HTTParty.get(ACCOUNTS_URL + token)
-      # JSON.parse(resp.body, symbolize_names: true)
+      resp = HTTParty.get(ACCOUNTS_URL + token)
+      JSON.parse(resp.body, symbolize_names: true)
       # TODO CHANGE
-      resp = Hash.new
-      if token == 'test'
-        resp[:status] = 'ok'
-        resp[:result] = Hash.new
-        resp[:result][:id] = 1
-        resp[:result][:role] = 'student'
-      elsif token == 'admin'
-        resp[:status] = 'ok'
-        resp[:result] = Hash.new
-        resp[:result][:id] = 2
-        resp[:result][:role] = 'moderator'
-      elsif token == 'student'
-        resp[:status] = 'ok'
-        resp[:result] = Hash.new
-        resp[:result][:id] = 3
-        resp[:result][:role] = 'student'
-      else
-        resp[:status] = 'error'
-      end
-      resp
+      # resp = Hash.new
+      # if token == 'test'
+      #   resp[:status] = 'ok'
+      #   resp[:result] = Hash.new
+      #   resp[:result][:id] = 1
+      #   resp[:result][:role] = 'student'
+      # elsif token == 'admin'
+      #   resp[:status] = 'ok'
+      #   resp[:result] = Hash.new
+      #   resp[:result][:id] = 2
+      #   resp[:result][:role] = 'moderator'
+      # elsif token == 'student'
+      #   resp[:status] = 'ok'
+      #   resp[:result] = Hash.new
+      #   resp[:result][:id] = 3
+      #   resp[:result][:role] = 'student'
+      # else
+      #   resp[:status] = 'error'
+      # end
+      # resp
     end
 
     def validate_application(application, token, author_id)
