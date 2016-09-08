@@ -10,4 +10,16 @@ class Transaction
     end
     transaction
   end
+
+  def self.get_list_active_by_account(account_id)
+    transactions = Array.new
+    DB.query("SELECT * FROM Transactions WHERE account_id=#{account_id} AND status='active' ORDER BY receiving_date ASC").each do |row|
+      transactions.push(row)
+    end
+    transactions
+  end
+
+  def self.update_amount_and_status(id, amount, status)
+    DB.query("UPDATE Transactions SET amount_to_spend=#{amount}, status='#{status}' WHERE id=#{id}")
+  end
 end

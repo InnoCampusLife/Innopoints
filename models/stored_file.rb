@@ -14,18 +14,25 @@ class StoredFile
     file
   end
 
+  def self.get_with_author_by_id(id)
+    file = nil
+    DB.query("SELECT f.id, f.extension, f.filename, f.type, ap.id as application_id, ac.id as account_id FROM Files as f, Applications as ap, Accounts as ac WHERE f.application_id = ap.id AND ap.author = ac.id AND f.id = #{id};").each do |row|
+      file = row
+    end
+    file
+  end
+
   def self.update_download_link(file_id, download_link)
     DB.query("UPDATE Files SET download_link='#{download_link}' WHERE id=#{file_id};")
   end
 
   def self.get_list_by_application_id(application_id)
-    files = nil
+    files = Array.new
     DB.query("SELECT * FROM Files WHERE application_id=#{application_id};").each do |row|
       files.push({
           id: row[:id],
           filename: row[:filename],
-          type: row[:type],
-          download_link: row[:download_link]
+          type: row[:type]
                  })
     end
     files

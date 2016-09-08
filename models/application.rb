@@ -34,6 +34,26 @@ class Application
     applications
   end
 
+  def self.get_full_list_with_status(status, skip, limit)
+    applications = Array.new
+    DB.query("SELECT id FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+      applications.push(get_full_by_id(row[:id]))
+    end
+    applications
+  end
+
+  def self.get_full_list_users_application(account_id, skip, limit, status=nil)
+    applications = Array.new
+    query_string = ""
+    unless status.nil?
+      query_string += "AND status='#{status}'"
+    end
+    DB.query("SELECT id FROM Applications WHERE author=#{account_id} #{query_string} LIMIT #{skip}, #{limit};").each do |row|
+        applications.push(get_full_by_id(row[:id]))
+    end
+    applications
+  end
+
   def self.get_list_users_application(account_id, skip, limit, status=nil)
     applications = Array.new
     account = Account.get_by_id(account_id)
@@ -67,6 +87,48 @@ class Application
       application = row
     end
     application
+  end
+
+  def self.get_full_by_id(id)
+    application = nil
+    DB.query("SELECT * FROM Applications WHERE id=#{id};").each do |row|
+      application = row
+    end
+    if application.nil?
+      return application
+    end
+    account = Account.get_by_id(application[:author])
+    if account.nil?
+      return nil
+    end
+    result_application = Hash.new
+    result_application[:id] = application[:id]
+    result_application[:type] = application[:type]
+    result_application[:author] = account[:owner]
+    result_application[:comment] = application[:comment]
+    result_application[:status] = application[:status]
+    result_application[:creation_date] = application[:creation_date]
+    works = Work.get_list_by_application_id(application[:id])
+    result_application[:work] = Array.new
+    works.each do |work|
+      work_account = Account.get_by_id(work[:actor])
+      activity = Activity.get_by_id_with_category(work[:activity_id])
+      total_price = nil
+      if activity[:type] == 'permanent'
+        total_price = activity[:price]
+      else
+        total_price = work[:amount].to_i * activity[:price].to_i
+      end
+      result_application[:work].push({
+                                         :activity => activity,
+                                         :actor => work_account[:owner],
+                                         :amount => work[:amount],
+                                         :total_price => total_price
+                                     })
+    end
+    files = StoredFile.get_list_by_application_id(application[:id])
+    result_application[:files] = files
+    result_application
   end
 
   def self.get_by_id_and_author(id, author)

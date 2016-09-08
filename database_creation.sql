@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS Items (
 
 CREATE TABLE IF NOT EXISTS Orders (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process'),
+  status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process', 'rejected_by_contributor'),
   creation_date TIMESTAMP NOT NULL ,
   is_joint_purchase BOOLEAN NOT NULL ,
   account_id int NOT NULL ,

@@ -3,6 +3,28 @@ require_relative '../config'
 require_relative 'item_category'
 
 class ShopItem
+  def self.get_by_id(id)
+    item = nil
+    DB.query("SELECT * FROM Items WHERE id=#{id};").each do |row|
+      item = row
+    end
+    item
+  end
+
+  def self.get_full_info_list(skip, limit, fields_to_sort, order)
+    fields = ''
+    if fields_to_sort.length == 2
+      fields = fields_to_sort[0] + ', ' + fields_to_sort[1]
+    else
+      fields = fields_to_sort[0]
+    end
+    items = Array.new
+    DB.query("SELECT id FROM Items WHERE parent is null ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit}").each do |row|
+      items.push(get_main_by_id(row[:id]))
+    end
+    items
+  end
+
   def self.get_list(skip, limit, fields_to_sort, order)
     fields = ''
     if fields_to_sort.length == 2
@@ -27,6 +49,20 @@ class ShopItem
     items
   end
 
+  def self.get_full_info_list_in_category(category_id, skip, limit, fields_to_sort, order)
+    fields = ''
+    if fields_to_sort.length == 2
+      fields = fields_to_sort[0] + ', ' + fields_to_sort[1]
+    else
+      fields = fields_to_sort[0]
+    end
+    items = Array.new
+    DB.query("SELECT id FROM Items WHERE parent is null AND category_id=#{category_id} ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
+      items.push(get_main_by_id(row[:id]))
+    end
+    items
+  end
+
   def self.get_list_in_category(category_id, skip, limit, fields_to_sort, order)
     fields = ''
     if fields_to_sort.length == 2
@@ -36,7 +72,8 @@ class ShopItem
     end
     items = Array.new
     image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
-    DB.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id=#{category_id} ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
+    DB.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id=#{category_id} AND i.category_id = ic.id ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
+      puts row
       items.push({
                      id: row[:id],
                      title: row[:title],
@@ -85,18 +122,26 @@ class ShopItem
       parent_item = row
       tmp = Hash.new
       tmp_value = Hash.new
+      options_number = 0
       (1..3).each do |i|
         if row[('option' + i.to_s).to_sym].nil?
           break
         end
+        options_number = i
         tmp[row[('option' + i.to_s).to_sym]] = row[('value' + i.to_s).to_sym]
       end
-      tmp_value[:id] = row[:id]
-      tmp_value[:quantity] = row[:quantity]
+      if options_number == 0
+        result_item[:id] = row[:id]
+        result_item[:quantity] = row[:quantity]
+        result_item[:combinations] = nil
+      else
+        tmp_value[:id] = row[:id]
+        tmp_value[:quantity] = row[:quantity]
+        result_item[:combinations][tmp] = tmp_value
+      end
       category = ItemCategory.get_by_id(row[:category_id])
       result_item[:category] = category
       result_item[:title] = row[:title]
-      result_item[:combinations][tmp] = tmp_value
       result_item[:image_link] = image_link + '/' + row[:id].to_s + '.jpg'
     end
     if parent_item.nil?
@@ -142,6 +187,10 @@ class ShopItem
           title: key,
           values: value
                                  })
+    end
+    if result_item[:options].size == 0
+      result_item[:options] = nil
+      result_item.delete(:combinations)
     end
     result_item
   end
