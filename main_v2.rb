@@ -1,5 +1,6 @@
 require 'sinatra/base'
 require 'json'
+require 'httparty'
 require_relative 'config'
 require_relative 'routes/applications/init'
 require_relative 'routes/shop/init'
