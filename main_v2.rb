@@ -5,6 +5,7 @@ require_relative 'routes/applications/init'
 require_relative 'routes/shop/init'
 require_relative 'models/init'
 require_relative 'helpers/helper'
+require_relative './env' if File.exists?('env.rb')
 
 
 class MyApp < Sinatra::Base
