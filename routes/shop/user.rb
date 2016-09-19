@@ -7,8 +7,24 @@ module Shop
       app.get URL + '/accounts/:token/orders/:status' do
         content_type :json
         token = params[:token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
         status = params[:status]
-
+        if status != 'in_process' && status != 'approved' && status != 'rejected' && status != 'waiting_to_process'
+          return generate_response('fail', nil, 'WRONG STATUS', CLIENT_ERROR_CODE)
+        end
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner(id)
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list_by_account_id(account[:id], skip, limit, status)
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
       end
 
       app.post URL + '/accounts/:token/orders' do
@@ -67,6 +83,8 @@ module Shop
           if account.nil?
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
+          orders = Order.get_list_by_account_id(account[:id], skip, limit)
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end

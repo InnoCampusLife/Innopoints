@@ -14,4 +14,12 @@ class ItemInOrder
     end
     items
   end
+
+  def self.get_full_list_in_order(order_id)
+    items = Array.new
+    DB.query("SELECT *, i.title as item_title, ic.title as category_title FROM ItemsInOrder as iio, Items as i, ItemCategories as ic WHERE iio.item_id = i.id AND i.category_id = ic.id AND order_id = #{order_id};", cast_booleans: true).each do |row|
+      items.push(row)
+    end
+    items
+  end
 end

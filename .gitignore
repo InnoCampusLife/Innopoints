@@ -3,3 +3,4 @@
 /public
 Gemfile.lock
 env.rb
+test.rb

@@ -21,6 +21,14 @@ class OrderContributor
     contributors
   end
 
+  def self.get_full_list_by_order_id(order_id)
+    contributors = Array.new
+    DB.query("SELECT *, oc.points_amount as points_to_contribute FROM OrderContributors as oc, Accounts as a WHERE oc.account_id = a.id AND oc.order_id = #{order_id};").each do |row|
+      contributors.push(row)
+    end
+    contributors
+  end
+
   def self.update_is_agreed(is_agreed, order_id, account_id)
     if is_agreed
       is_agreed = 1

@@ -75,7 +75,7 @@ module ValidationHelpers
             return { status: 'fail', description: 'Admin can not buy items' }
           end
           if account[:id] == author_id
-            author_found
+            author_found = true
           end
           if account[:points_amount] < contributor[:points_amount]
             return { status: 'fail', description: 'Contributor does not have enough points' }
@@ -176,29 +176,30 @@ module ValidationHelpers
 
     # CheckToken
     def is_token_valid(token)
+      if ENV['dev']
+        resp = Hash.new
+        if token == 'test'
+          resp[:status] = 'ok'
+          resp[:result] = Hash.new
+          resp[:result][:id] = 1
+          resp[:result][:role] = 'student'
+        elsif token == 'admin'
+          resp[:status] = 'ok'
+          resp[:result] = Hash.new
+          resp[:result][:id] = 2
+          resp[:result][:role] = 'moderator'
+        elsif token == 'student'
+          resp[:status] = 'ok'
+          resp[:result] = Hash.new
+          resp[:result][:id] = 3
+          resp[:result][:role] = 'student'
+        else
+          resp[:status] = 'error'
+        end
+        return resp
+      end
       resp = HTTParty.get(ACCOUNTS_URL + token)
       JSON.parse(resp.body, symbolize_names: true)
-      # TODO CHANGE
-      # resp = Hash.new
-      # if token == 'test'
-      #   resp[:status] = 'ok'
-      #   resp[:result] = Hash.new
-      #   resp[:result][:id] = 1
-      #   resp[:result][:role] = 'student'
-      # elsif token == 'admin'
-      #   resp[:status] = 'ok'
-      #   resp[:result] = Hash.new
-      #   resp[:result][:id] = 2
-      #   resp[:result][:role] = 'moderator'
-      # elsif token == 'student'
-      #   resp[:status] = 'ok'
-      #   resp[:result] = Hash.new
-      #   resp[:result][:id] = 3
-      #   resp[:result][:role] = 'student'
-      # else
-      #   resp[:status] = 'error'
-      # end
-      # resp
     end
 
     def validate_application(application, token, author_id)
@@ -222,7 +223,7 @@ module ValidationHelpers
         if work[:actor].nil? || work[:activity_id].nil?
           return { status: 'fail', description: 'ACTOR AND ACTIVITY_ID CAN NOT TO BE NULL' }
         end
-        if work[:actor].length < 24 || work[:actor] > 128
+        if work[:actor].length < 24 || work[:actor].length > 128
           return { status: 'fail', description: 'ACTOR\'S ID LENGTH HAS TO BE BETWEEN 24 and 128' }
         end
         if exists_actors.include?(work[:actor])
