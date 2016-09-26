@@ -4,9 +4,6 @@ require_relative '../../config'
 module Applications
   module General
     def self.registered(app)
-      app.get URL + '/general' do
-        'general'
-      end
 
       app.get URL + '/categories' do
         content_type :json

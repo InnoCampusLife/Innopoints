@@ -4,7 +4,8 @@ class Category
 
   def self.get_list(skip, limit)
     categories = Array.new
-    DB.query("SELECT * FROM Categories LIMIT #{skip}, #{limit};").each do |row|
+    # LIMIT #{skip}, #{limit}
+    DB.query("SELECT * FROM Categories;").each do |row|
       puts row
       categories.push({
           id: row[:id],

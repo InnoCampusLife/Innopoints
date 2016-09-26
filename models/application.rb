@@ -10,7 +10,7 @@ class Application
     if comment.nil?
       comment = ''
     end
-    DB.query("INSERT INTO Applications VALUES (default,#{author}, '#{type}', '#{comment}', 'in_process', NOW());")
+    DB.query("INSERT INTO Applications VALUES (default,#{author}, '#{type}', '#{DB.escape(comment)}', 'in_process', NOW());")
     id = DB.last_id
     application = get_by_id(id)
     application
@@ -45,7 +45,9 @@ class Application
   def self.get_full_list_users_application(account_id, skip, limit, status=nil)
     applications = Array.new
     query_string = ""
-    unless status.nil?
+    if status.nil?
+      query_string += "AND status<>'deleted'"
+    else
       query_string += "AND status='#{status}'"
     end
     DB.query("SELECT id FROM Applications WHERE author=#{account_id} #{query_string} LIMIT #{skip}, #{limit};").each do |row|
@@ -182,7 +184,7 @@ class Application
   end
 
   def self.update_comment(id, comment)
-    DB.query("UPDATE Applications SET comment='#{comment}' WHERE id=#{id};")
+    DB.query("UPDATE Applications SET comment='#{DB.escape(comment)}' WHERE id=#{id};")
   end
 
   def self.update_status(id, status)
@@ -190,8 +192,9 @@ class Application
   end
 
   def self.delete_by_id(id)
-    Work.delete_all_by_application_id(id)
-    StoredFile.delete_all_by_application_id(id)
-    DB.query("DELETE FROM Applications WHERE id=#{id};")
+    DB.query("UPDATE Applications SET status='deleted' WHERE id=#{id};")
+    # Work.delete_all_by_application_id(id)
+    # StoredFile.delete_all_by_application_id(id)
+    # DB.query("DELETE FROM Applications WHERE id=#{id};")
   end
 end

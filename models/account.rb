@@ -8,7 +8,7 @@ class Account
     end
     # creation_date = DateTime.now
     #TODO fix the time
-    DB.query("INSERT INTO Accounts VALUES (default, '#{owner}', '#{type}', #{points_amount}, NOW());")
+    DB.query("INSERT INTO Accounts VALUES (default, '#{DB.escape(owner)}', '#{type}', #{points_amount}, NOW());")
     account = get_by_owner(owner)
     account
   end

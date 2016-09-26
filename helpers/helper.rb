@@ -58,9 +58,11 @@ module ValidationHelpers
         total_points = 0
         author_found = false
         order[:contributors].each do |contributor|
-          contributor[:id] = validate_integer(contributor[:id])
-          if contributor[:id].nil?
-            return { status: 'fail', description: 'Wrong contributor id' }
+          unless contributor[:id].is_a?(String)
+            return { status: 'fail', description: 'contributor id has to be a string' }
+          end
+          if contributor[:id].length < 24 || contributor[:id].length > 128
+            return { status: 'fail', description: 'ACTOR\'S ID LENGTH HAS TO BE BETWEEN 24 and 128' }
           end
           contributor[:points_amount] = validate_integer(contributor[:points_amount])
           if contributor[:points_amount].nil? || contributor[:points_amount] <= 0
@@ -111,7 +113,7 @@ module ValidationHelpers
           if stored_item[:quantity] < item[:amount]
             return { status: 'fail', description: 'Too big amount' }
           end
-          total_price += stored_item[:price]
+          total_price += stored_item[:price] * item[:amount]
           if account[:points_amount] < total_price
             return { status: 'fail', description: 'User does not have enough points' }
           end
@@ -181,17 +183,17 @@ module ValidationHelpers
         if token == 'test'
           resp[:status] = 'ok'
           resp[:result] = Hash.new
-          resp[:result][:id] = 1
+          resp[:result][:id] = '1'
           resp[:result][:role] = 'student'
         elsif token == 'admin'
           resp[:status] = 'ok'
           resp[:result] = Hash.new
-          resp[:result][:id] = 2
+          resp[:result][:id] = '2'
           resp[:result][:role] = 'moderator'
         elsif token == 'student'
           resp[:status] = 'ok'
           resp[:result] = Hash.new
-          resp[:result][:id] = 3
+          resp[:result][:id] = '3'
           resp[:result][:role] = 'student'
         else
           resp[:status] = 'error'
@@ -222,6 +224,9 @@ module ValidationHelpers
       application[:work].each do |work|
         if work[:actor].nil? || work[:activity_id].nil?
           return { status: 'fail', description: 'ACTOR AND ACTIVITY_ID CAN NOT TO BE NULL' }
+        end
+        unless work[:actor].is_a?(String)
+          return { status: 'fail', description: 'actor has to be a string' }
         end
         if work[:actor].length < 24 || work[:actor].length > 128
           return { status: 'fail', description: 'ACTOR\'S ID LENGTH HAS TO BE BETWEEN 24 and 128' }

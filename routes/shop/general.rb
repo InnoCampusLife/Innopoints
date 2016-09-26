@@ -4,6 +4,12 @@ require_relative '../../config'
 module Shop
   module General
     def self.registered(app)
+      app.get URL + '/shop/categories' do
+        content_type :json
+        item_categories = ItemCategory.get_list
+        return generate_response('ok', item_categories, nil, SUCCESSFUL_RESPONSE_CODE)
+      end
+
       app.get URL + '/shop/items' do
         content_type :json
         skip = validate_skip(params[:skip])

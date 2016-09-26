@@ -4,24 +4,105 @@ require_relative '../../config'
 module Shop
   module User
     def self.registered(app)
-      app.get URL + '/accounts/:token/orders/:status' do
+
+      app.get URL + '/accounts/:token/orders/in_process' do
         content_type :json
         token = params[:token]
         skip = validate_skip(params[:skip])
         limit = validate_limit(params[:limit])
         resp = is_token_valid(token)
-        status = params[:status]
-        if status != 'in_process' && status != 'approved' && status != 'rejected' && status != 'waiting_to_process'
-          return generate_response('fail', nil, 'WRONG STATUS', CLIENT_ERROR_CODE)
-        end
         if resp[:status] == 'ok'
           id = resp[:result][:id]
           account = Account.get_by_owner(id)
           if account.nil?
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
-          orders = Order.get_list_by_account_id(account[:id], skip, limit, status)
+          orders = Order.get_list_by_account_id(account[:id], skip, limit, 'in_process')
           generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/accounts/:token/orders/approved' do
+        content_type :json
+        token = params[:token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner(id)
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list_by_account_id(account[:id], skip, limit, 'approved')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/accounts/:token/orders/rejected' do
+        content_type :json
+        token = params[:token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner(id)
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list_by_account_id(account[:id], skip, limit, 'rejected')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/accounts/:token/orders/waiting_to_process' do
+        content_type :json
+        token = params[:token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner(id)
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list_by_account_id(account[:id], skip, limit, 'waiting_to_process')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/accounts/:token/orders/:order_id' do
+        content_type :json
+        token = params[:token]
+        order_id = validate_integer(params[:order_id])
+        if order_id.nil?
+          return generate_response('fail', nil, 'WRONG ORDER ID', CLIENT_ERROR_CODE)
+        end
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner(id)
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          order = Order.get_full_by_id(order_id)
+          if order.nil? || order[:status] == 'deleted'
+            return generate_response('fail', nil, 'ORDER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          if order[:author] != account[:owner]
+            return generate_response('fail', nil, 'USER DOES NOT HAVE ACCESS', CLIENT_ERROR_CODE)
+          end
+          generate_response('ok', order, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
@@ -109,7 +190,7 @@ module Shop
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           order = Order.get_by_id(order_id)
-          if order.nil?
+          if order.nil? || order[:status] == 'deleted'
             return generate_response('fail', nil, 'ORDER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           if order[:status] != 'waiting_to_process'
@@ -175,19 +256,15 @@ module Shop
             item = ShopItem.get_by_id(item_in_order[:item_id])
             ShopItem.update_quantity(item[:id], item[:quantity] + item_in_order[:amount])
           end
-          ItemInOrder.delete_by_order_id(order_id)
-          puts order
+          # ItemInOrder.delete_by_order_id(order_id)
           if order[:is_joint_purchase]
             contributors = OrderContributor.get_list_by_order_id(order_id)
             contributors.each do |contributor|
               contributor_account = Account.get_by_id(contributor[:account_id])
               Account.update_points_amount(contributor_account[:id], contributor_account[:points_amount] + contributor[:points_amount])
             end
-            OrderContributor.delete_by_order_id(order_id)
+            # OrderContributor.delete_by_order_id(order_id)
           else
-            puts account[:id]
-            puts account[:points_amount]
-            puts order[:total_price]
             Account.update_points_amount(account[:id], account[:points_amount] + order[:total_price])
           end
           Order.delete_by_id(order_id)

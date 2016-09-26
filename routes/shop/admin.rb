@@ -4,6 +4,107 @@ require_relative '../../config'
 module Shop
   module Admin
     def self.registered(app)
+
+      app.get URL + '/admin/:admin_token/orders/in_process' do
+        content_type :json
+        token = params[:admin_token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(id, 'admin')
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list(skip, limit, 'in_process')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/admin/:admin_token/orders/rejected' do
+        content_type :json
+        token = params[:admin_token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(id, 'admin')
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list(skip, limit, 'rejected')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/admin/:admin_token/orders/approved' do
+        content_type :json
+        token = params[:admin_token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(id, 'admin')
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list(skip, limit, 'approved')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/admin/:admin_token/orders/waiting_to_process' do
+        content_type :json
+        token = params[:admin_token]
+        skip = validate_skip(params[:skip])
+        limit = validate_limit(params[:limit])
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(id, 'admin')
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          orders = Order.get_list(skip, limit, 'waiting_to_process')
+          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+      app.get URL + '/accounts/:token/orders/:order_id' do
+        content_type :json
+        token = params[:admin_token]
+        order_id = validate_integer(params[:order_id])
+        if order_id.nil?
+          return generate_response('fail', nil, 'WRONG ORDER ID', CLIENT_ERROR_CODE)
+        end
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(id, 'admin')
+          if account.nil?
+            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          order = Order.get_full_by_id(order_id)
+          if order.nil? || order[:status] == 'deleted'
+            return generate_response('fail', nil, 'ORDER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          end
+          generate_response('ok', order, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
       app.put URL + '/admin/:admin_token/orders/:order_id/:action' do
         content_type :json
         token = params[:admin_token]
@@ -16,14 +117,13 @@ module Shop
           return generate_response('fail', nil, 'WRONG ACTION', CLIENT_ERROR_CODE)
         end
         resp = is_token_valid(token)
-        puts resp
         if resp[:status] == 'ok'
           account = Account.get_by_owner_and_type(resp[:result][:id], 'admin')
           if account.nil?
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           order = Order.get_by_id(order_id)
-          if order.nil?
+          if order.nil? || order[:status] == 'deleted'
             return generate_response('fail', nil, 'ORDER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           if order[:status] != 'in_process'
@@ -75,29 +175,6 @@ module Shop
               Order.update_status(order_id, 'rejected')
               return generate_response('ok', { id: order[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
-        else
-          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
-        end
-      end
-
-      app.get URL + '/admin/:admin_token/orders/:status' do
-        content_type :json
-        token = params[:admin_token]
-        skip = validate_skip(params[:skip])
-        limit = validate_limit(params[:limit])
-        resp = is_token_valid(token)
-        status = params[:status]
-        if status != 'in_process' && status != 'approved' && status != 'rejected' && status != 'waiting_to_process'
-          return generate_response('fail', nil, 'WRONG STATUS', CLIENT_ERROR_CODE)
-        end
-        if resp[:status] == 'ok'
-          id = resp[:result][:id]
-          account = Account.get_by_owner_and_type(id, 'admin')
-          if account.nil?
-            return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
-          end
-          orders = Order.get_list(skip, limit, status)
-          generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end

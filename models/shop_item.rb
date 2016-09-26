@@ -130,15 +130,15 @@ class ShopItem
         options_number = i
         tmp[row[('option' + i.to_s).to_sym]] = row[('value' + i.to_s).to_sym]
       end
-      if options_number == 0
-        result_item[:id] = row[:id]
-        result_item[:quantity] = row[:quantity]
-        result_item[:combinations] = nil
-      else
+      # if options_number == 0
+      #   result_item[:id] = row[:id]
+      #   result_item[:quantity] = row[:quantity]
+      #   result_item[:combinations] = nil
+      # else
         tmp_value[:id] = row[:id]
         tmp_value[:quantity] = row[:quantity]
         result_item[:combinations][tmp] = tmp_value
-      end
+      # end
       category = ItemCategory.get_by_id(row[:category_id])
       result_item[:category] = category
       result_item[:title] = row[:title]
@@ -190,7 +190,7 @@ class ShopItem
     end
     if result_item[:options].size == 0
       result_item[:options] = nil
-      result_item.delete(:combinations)
+      # result_item.delete(:combinations)
     end
     result_item
   end

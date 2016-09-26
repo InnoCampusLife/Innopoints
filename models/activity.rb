@@ -29,7 +29,8 @@ class Activity
 
   def self.get_list_with_categories(skip, limit)
     activities = Array.new
-    DB.query("select a.id, a.title, a.type, a.price, a.category_id, c.title as category_title from Categories as c, Activities as a WHERE c.id = a.category_id LIMIT #{skip}, #{limit};").each do |row|
+    # LIMIT #{skip}, #{limit}
+    DB.query("select a.id, a.title, a.type, a.price, a.category_id, c.title as category_title from Categories as c, Activities as a WHERE c.id = a.category_id ;").each do |row|
       activities.push({
                           id: row[:id],
                           title: row[:title],
@@ -46,7 +47,8 @@ class Activity
 
   def self.get_list_with_categories_in_category(category_id, skip, limit)
     activities = Array.new
-    DB.query("select a.id, a.title, a.type, a.price, a.category_id, c.title as category_title from Categories as c, Activities as a WHERE c.id = a.category_id AND c.id = #{category_id} LIMIT #{skip}, #{limit};").each do |row|
+    # LIMIT #{skip}, #{limit}
+    DB.query("select a.id, a.title, a.type, a.price, a.category_id, c.title as category_title from Categories as c, Activities as a WHERE c.id = a.category_id AND c.id = #{category_id} ;").each do |row|
       activities.push({
                           id: row[:id],
                           title: row[:title],

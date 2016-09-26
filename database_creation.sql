@@ -11,15 +11,15 @@ CREATE TABLE IF NOT EXISTS Accounts (
   owner VARCHAR(255) NOT NULL UNIQUE,
   type ENUM('student', 'admin'),
   points_amount INT,
-  creation_date TIMESTAMP NOT NULL
+  creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS Transactions (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   account_id INT,
   amount INT NOT NULL,
   amount_to_spend INT NOT NULL ,
-  receiving_date TIMESTAMP NOT NULL,
-  expiration_date TIMESTAMP NOT NULL ,
+  receiving_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expiration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status ENUM('active', 'expired', 'spent'),
   FOREIGN KEY (account_id) REFERENCES Accounts(id)
 );
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS Applications (
   author INT NOT NULL ,
   type ENUM('personal', 'group'),
   comment TEXT,
-  status ENUM('rejected', 'approved', 'in_process', 'rework'),
-  creation_date TIMESTAMP NOT NULL,
+  status ENUM('rejected', 'approved', 'in_process', 'rework', 'deleted'),
+  creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (author) REFERENCES Accounts(id)
 );
 CREATE TABLE IF NOT EXISTS Works (
@@ -126,8 +126,8 @@ CREATE TABLE IF NOT EXISTS Items (
 
 CREATE TABLE IF NOT EXISTS Orders (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process', 'rejected_by_contributor'),
-  creation_date TIMESTAMP NOT NULL ,
+  status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process', 'rejected_by_contributor', 'deleted'),
+  creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   is_joint_purchase BOOLEAN NOT NULL ,
   account_id int NOT NULL ,
   total_price int NOT NULL ,
@@ -152,16 +152,6 @@ CREATE TABLE IF NOT EXISTS  OrderContributors (
   FOREIGN KEY (order_id) REFERENCES Orders(id),
   FOREIGN KEY (account_id) REFERENCES Accounts(id)
 );
-
-CREATE TABLE IF NOT EXISTS  ReservedPointsToOrder (
-  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  order_id INT NOT NULL ,
-  account_id INT NOT NULL ,
-  points_amount INT NOT NULL ,
-  FOREIGN KEY (order_id) REFERENCES Orders(id),
-  FOREIGN KEY (account_id) REFERENCES Accounts(id)
-)
-
 
 
 

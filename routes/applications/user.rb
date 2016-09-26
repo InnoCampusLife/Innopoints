@@ -3,9 +3,6 @@ require 'sinatra'
 module Applications
   module User
     def self.registered(app)
-      app.get '/user' do
-        'user'
-      end
 
       app.get URL + '/accounts/:token' do
         content_type :json
@@ -292,7 +289,7 @@ GetApplication
             generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             application = Application.get_full_by_id_and_author(application_id, account[:id])
-            if application.nil?
+            if application.nil? || application[:status] == 'deleted'
               generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
             else
               generate_response('ok', application, nil, SUCCESSFUL_RESPONSE_CODE)
@@ -408,7 +405,7 @@ GetApplication
             generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             application = Application.get_by_id_and_author(application_id, account[:id])
-            if application.nil?
+            if application.nil? || application[:status] == 'deleted'
               generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
             else
               if application[:status] == 'in_process' || application[:status] == 'rejected'
@@ -469,8 +466,11 @@ UpdateApplication
               return generate_response('fail', nil, res[:description], CLIENT_ERROR_CODE)
             end
             stored_application = Application.get_full_by_id_and_author(application_id, account[:id])
-            if stored_application.nil?
+            if stored_application.nil? || stored_application[:status] == 'deleted'
               return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
+            end
+            if stored_application[:status] != 'in_process' && stored_application[:status] != 'rework'
+              return generate_response('fail', nil, 'IT IS NOT POSSIBLE TO UPDATE APPLICATION', CLIENT_ERROR_CODE)
             end
             if application[:type] != stored_application[:type]
               return generate_response('fail', nil, 'IT IS NOT POSSIBLE TO CHANGE TYPE', CLIENT_ERROR_CODE)
@@ -529,7 +529,7 @@ UpdateApplication
             generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             application = Application.get_full_by_id_and_author(application_id, account[:id])
-            if application.nil?
+            if application.nil? || application[:status] == 'deleted'
               return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
             end
             if application[:status] != 'rework'
@@ -542,7 +542,6 @@ UpdateApplication
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
       end
-
     end
   end
 end

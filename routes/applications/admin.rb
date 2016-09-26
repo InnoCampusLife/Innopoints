@@ -3,9 +3,6 @@ require 'sinatra'
 module Applications
   module Admin
     def self.registered(app)
-      app.get '/admin' do
-        'admin'
-      end
 
       app.get URL + '/admin/:admin_token/accounts' do
         content_type :json
@@ -64,8 +61,12 @@ module Applications
         input = res[:result]
         admin_token = params[:admin_token]
         points_amount = validate_integer(input[:points_amount])
+        action = input[:action]
         if points_amount.nil?
           return generate_response('fail', nil, 'WRONG POINTS AMOUNT', CLIENT_ERROR_CODE)
+        end
+        if action != 'decrease' && action != 'increase'
+          return generate_response('fail', nil, 'WRONG ACTION', CLIENT_ERROR_CODE)
         end
         resp = is_token_valid(admin_token)
         if resp[:status] == 'ok'
@@ -85,12 +86,23 @@ module Applications
               if target_account[:type] == 'admin'
                 generate_response('fail', nil, 'IT IS NOT POSSIBLE TO UPDATE POINTS', CLIENT_ERROR_CODE)
               else
-                transaction = Transaction.create(target_account[:id], points_amount)
-                if transaction.nil?
-                  return generate_response('fail', nil, 'ERROR WHILE CREATING TRANSACTION', SERVER_ERROR_CODE)
+                case action
+                  when 'increase'
+                    transaction = Transaction.create(target_account[:id], points_amount)
+                    if transaction.nil?
+                      return generate_response('fail', nil, 'ERROR WHILE CREATING TRANSACTION', SERVER_ERROR_CODE)
+                    end
+                    Account.update_points_amount(target_account[:id], target_account[:points_amount] + points_amount)
+                    return generate_response('ok', { description: 'POINTS AMOUNT WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE)
+                  when 'decrease'
+                    transactions = Transaction.get_list_active_by_account(target_account[:id])
+                    unless is_enough_points_in_transactions(transactions, points_amount)
+                      return generate_response('fail', nil, 'USER DOES NOT HAVE ENOUGH POINTS', CLIENT_ERROR_CODE)
+                    end
+                    update_points_in_transactions(transactions, points_amount)
+                    Account.update_points_amount(target_account[:id], target_account[:points_amount] - points_amount)
+                    return generate_response('ok', { description: 'POINTS AMOUNT WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE)
                 end
-                Account.update_points_amount(target_account[:id], points_amount)
-                generate_response('ok', { description: 'POINTS AMOUNT WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE)
               end
             end
           end
@@ -239,7 +251,7 @@ module Applications
             return generate_response('fail', nil, 'WRONG TARGET APPLICATION ID', CLIENT_ERROR_CODE)
           end
           application = Application.get_full_by_id(application_id)
-          if application.nil?
+          if application.nil? || application[:status] == 'deleted'
             return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           generate_response('ok', application, nil, SUCCESSFUL_RESPONSE_CODE)
@@ -264,7 +276,7 @@ module Applications
             return generate_response('fail', nil, 'WRONG TARGET APPLICATION ID', CLIENT_ERROR_CODE)
           end
           application = Application.get_by_id(application_id)
-          if application.nil?
+          if application.nil? || application[:status] == 'deleted'
             return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           if application[:status] != 'in_process'
@@ -336,8 +348,11 @@ module Applications
               return generate_response('fail', nil, res[:description], CLIENT_ERROR_CODE)
             end
             stored_application = Application.get_full_by_id(application_id)
-            if stored_application.nil?
+            if stored_application.nil? || application[:status] == 'deleted'
               return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
+            end
+            if stored_application[:status] != 'in_process' && stored_application[:status] != 'rework'
+              return generate_response('fail', nil, 'IT IS NOT POSSIBLE TO UPDATE APPLICATION', CLIENT_ERROR_CODE)
             end
             if application[:type] != stored_application[:type]
               return generate_response('fail', nil, 'IT IS NOT POSSIBLE TO CHANGE TYPE', CLIENT_ERROR_CODE)

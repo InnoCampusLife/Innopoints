@@ -1,6 +1,6 @@
 class StoredFile
   def self.create(application_id, filename, type, extension)
-    DB.query("INSERT INTO Files VALUES (default, '#{filename}', '#{type}', NULL, #{application_id}, '#{extension}');")
+    DB.query("INSERT INTO Files VALUES (default, '#{DB.escape(filename)}', '#{type}', NULL, #{application_id}, '#{DB.escape(extension)}');")
     id = DB.last_id
     file = get_by_id(id)
     file
@@ -23,7 +23,7 @@ class StoredFile
   end
 
   def self.update_download_link(file_id, download_link)
-    DB.query("UPDATE Files SET download_link='#{download_link}' WHERE id=#{file_id};")
+    DB.query("UPDATE Files SET download_link='#{DB.escape(download_link)}' WHERE id=#{file_id};")
   end
 
   def self.get_list_by_application_id(application_id)
