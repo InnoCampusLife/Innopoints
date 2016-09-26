@@ -11,15 +11,15 @@ CREATE TABLE IF NOT EXISTS Accounts (
   owner VARCHAR(255) NOT NULL UNIQUE,
   type ENUM('student', 'admin'),
   points_amount INT,
-  creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  creation_date TIMESTAMP NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS Transactions (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   account_id INT,
   amount INT NOT NULL,
   amount_to_spend INT NOT NULL ,
-  receiving_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  expiration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  receiving_date TIMESTAMP NOT NULL DEFAULT 0,
+  expiration_date TIMESTAMP NOT NULL DEFAULT 0,
   status ENUM('active', 'expired', 'spent'),
   FOREIGN KEY (account_id) REFERENCES Accounts(id)
 );
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS Items (
 CREATE TABLE IF NOT EXISTS Orders (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   status ENUM('in_process', 'approved', 'rejected', 'waiting_to_process', 'rejected_by_contributor', 'deleted'),
-  creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creation_date TIMESTAMP NOT NULL DEFAULT 0,
   is_joint_purchase BOOLEAN NOT NULL ,
   account_id int NOT NULL ,
   total_price int NOT NULL ,
