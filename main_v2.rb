@@ -1,4 +1,4 @@
-require 'sinatra'
+require 'sinatra/base'
 require 'json'
 require 'httparty'
 require_relative 'config'
