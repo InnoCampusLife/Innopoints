@@ -9,9 +9,7 @@ class Order
     order = nil
     DB.query("INSERT INTO Orders VALUES (default, '#{status}', now(), #{is_joint_purchase}, #{account_id}, #{total_price});")
     id = DB.last_id
-    DB.query("SELECT * FROM Orders WHERE id=#{id}", cast_booleans: true).each do |row|
-      order = row
-    end
+    order = get_by_id(id)
     order
   end
 
@@ -19,6 +17,7 @@ class Order
     order = nil
     DB.query("SELECT * FROM Orders WHERE id=#{order_id}", cast_booleans: true).each do |row|
       order = row
+      order[:creation_date] = order[:creation_date].to_i
     end
     order
   end
@@ -34,7 +33,7 @@ class Order
     result_order = Hash.new
     result_order[:id] = order[:id]
     result_order[:status] = order[:status]
-    result_order[:creation_date] = order[:creation_date]
+    result_order[:creation_date] = order[:creation_date].to_i
     result_order[:is_joint_purchase] = order[:is_joint_purchase]
     result_order[:total_price] = order[:total_price]
     result_order[:items] = Array.new
@@ -96,7 +95,7 @@ class Order
       result_order[:id] = order[:id]
       result_order[:author] = account[:owner]
       result_order[:status] = order[:status]
-      result_order[:creation_date] = order[:creation_date]
+      result_order[:creation_date] = order[:creation_date].to_i
       result_order[:is_joint_purchase] = order[:is_joint_purchase]
       result_order[:total_price] = order[:total_price]
       result_order[:items] = Array.new
@@ -160,7 +159,7 @@ class Order
       result_order[:id] = order[:id]
       result_order[:author] = account[:owner]
       result_order[:status] = order[:status]
-      result_order[:creation_date] = order[:creation_date]
+      result_order[:creation_date] = order[:creation_date].to_i
       result_order[:is_joint_purchase] = order[:is_joint_purchase]
       result_order[:total_price] = order[:total_price]
       result_order[:items] = Array.new

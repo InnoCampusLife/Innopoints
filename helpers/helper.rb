@@ -11,6 +11,57 @@ module ValidationHelpers
       { status: 'ok', result: input}
     end
 
+    def get_username(user_id, token)
+      bio = get_bio_from_accounts(user_id, token)
+      puts(bio)
+      if bio[:status] == 'ok'
+        return bio[:result][:username]
+      else
+        return nil
+      end
+    end
+
+    def get_bio_from_accounts(user_id, token)
+      response = HTTParty.get(ACCOUNTS_URL + token + "/getBio?id=#{user_id}")
+      JSON.parse(response.body, symbolize_names: true)
+    end
+
+    def prepare_account(account, token)
+      unless account[:owner].nil?
+        owner = account[:owner]
+        account[:owner] = Hash.new
+        account[:owner][:id] = owner
+        account[:owner][:username] = get_username(owner, token)
+      end
+    end
+
+    def prepare_application(application, token)
+      unless application[:author].nil?
+        author = application[:author]
+        application[:author] = Hash.new
+        application[:author][:id] = author
+        application[:author][:username] = get_username(author, token)
+      end
+      application[:work].each do |work|
+        actor = work[:actor]
+        work[:actor] = Hash.new
+        work[:actor][:id] = actor
+        work[:actor][:username] = get_username(actor, token)
+      end
+    end
+
+    def prepare_order(order, token)
+      unless order[:author].nil?
+        author = order[:author]
+        order[:author] = Hash.new
+        order[:author][:id] = author
+        order[:author][:username] = get_username(author, token)
+      end
+      order[:contributors].each do |contributor|
+        contributor[:username] = get_username(contributor[:id], token)
+      end
+    end
+
     def validate_order(order, author_id)
       unless order.is_a?(Hash)
         return { status: 'fail', description: 'Order has to be an object' }
@@ -195,6 +246,11 @@ module ValidationHelpers
           resp[:result] = Hash.new
           resp[:result][:id] = '3'
           resp[:result][:role] = 'student'
+        elsif token == 'L1mMAJe3Ssnp6D89n8C7e88uOkVuPdgt'
+          resp[:status] = 'ok'
+          resp[:result] = Hash.new
+          resp[:result][:id] = '57c197fc636b0300057ddad2'
+          resp[:result][:role] = 'admin'
         else
           resp[:status] = 'error'
         end

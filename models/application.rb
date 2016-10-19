@@ -28,7 +28,7 @@ class Application
                             },
                             type: row[:type],
                             status: row[:status],
-                            creation_date: row[:creation_date]
+                            creation_date: row[:creation_date].to_i
                         })
     end
     applications
@@ -66,7 +66,7 @@ class Application
             author: account[:owner],
             type: row[:type],
             status: row[:status],
-            creation_date: row[:creation_date]
+            creation_date: row[:creation_date].to_i
                           })
       end
     else
@@ -76,7 +76,7 @@ class Application
                               author: account[:owner],
                               type: row[:type],
                               status: row[:status],
-                              creation_date: row[:creation_date]
+                              creation_date: row[:creation_date].to_i
                           })
       end
     end
@@ -87,6 +87,7 @@ class Application
     application = nil
     DB.query("SELECT * FROM Applications WHERE id=#{id};").each do |row|
       application = row
+      application[:creation_date] = application[:creation_date].to_i
     end
     application
   end
@@ -109,7 +110,7 @@ class Application
     result_application[:author] = account[:owner]
     result_application[:comment] = application[:comment]
     result_application[:status] = application[:status]
-    result_application[:creation_date] = application[:creation_date]
+    result_application[:creation_date] = application[:creation_date].to_i
     works = Work.get_list_by_application_id(application[:id])
     result_application[:work] = Array.new
     works.each do |work|
@@ -137,6 +138,7 @@ class Application
     application = nil
     DB.query("SELECT * FROM Applications WHERE id=#{id} AND author=#{author};").each do |row|
       application = row
+      application[:creation_date] = application[:creation_date].to_i
     end
     application
   end
@@ -159,7 +161,7 @@ class Application
     result_application[:author] = account[:owner]
     result_application[:comment] = application[:comment]
     result_application[:status] = application[:status]
-    result_application[:creation_date] = application[:creation_date]
+    result_application[:creation_date] = application[:creation_date].to_i
     works = Work.get_list_by_application_id(application[:id])
     result_application[:work] = Array.new
     works.each do |work|

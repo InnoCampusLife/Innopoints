@@ -18,6 +18,9 @@ module Shop
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           orders = Order.get_list_by_account_id(account[:id], skip, limit, 'in_process')
+          orders.each do |order|
+            prepare_order(order, token)
+          end
           generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -37,6 +40,9 @@ module Shop
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           orders = Order.get_list_by_account_id(account[:id], skip, limit, 'approved')
+          orders.each do |order|
+            prepare_order(order, token)
+          end
           generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -56,6 +62,9 @@ module Shop
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           orders = Order.get_list_by_account_id(account[:id], skip, limit, 'rejected')
+          orders.each do |order|
+            prepare_order(order, token)
+          end
           generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -75,6 +84,9 @@ module Shop
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           orders = Order.get_list_by_account_id(account[:id], skip, limit, 'waiting_to_process')
+          orders.each do |order|
+            prepare_order(order, token)
+          end
           generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -102,6 +114,7 @@ module Shop
           if order[:author] != account[:owner]
             return generate_response('fail', nil, 'USER DOES NOT HAVE ACCESS', CLIENT_ERROR_CODE)
           end
+          prepare_order(order, token)
           generate_response('ok', order, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -165,6 +178,9 @@ module Shop
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           orders = Order.get_list_by_account_id(account[:id], skip, limit)
+          orders.each do |order|
+            prepare_order(order, token)
+          end
           generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)

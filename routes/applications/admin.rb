@@ -17,6 +17,9 @@ module Applications
             return generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
           accounts = Account.get_list(skip, limit)
+          accounts.each do |account|
+            prepare_account(account, admin_token)
+          end
           generate_response('ok', accounts, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -43,6 +46,7 @@ module Applications
               generate_response('fail', nil, 'TARGET USER DOES NOT EXIST', CLIENT_ERROR_CODE)
             else
               account_info = Account.to_info(target_account)
+              prepare_account(account_info, admin_token)
               generate_response('ok', account_info, nil, SUCCESSFUL_RESPONSE_CODE)
             end
           end
@@ -116,7 +120,8 @@ module Applications
         content_type :json
         skip = validate_skip(params[:skip])
         limit =  validate_limit(params[:limit])
-        resp = is_token_valid(params[:admin_token])
+        admin_token = params[:admin_token]
+        resp = is_token_valid(admin_token)
         if resp[:status] == 'ok'
           owner_id = resp[:result][:id]
           account = Account.get_by_owner_and_type(owner_id, 'admin')
@@ -124,6 +129,9 @@ module Applications
             generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             applications = Application.get_full_list_with_status('in_process', skip, limit)
+            applications.each do |application|
+              prepare_application(application, admin_token)
+            end
             generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -136,7 +144,8 @@ module Applications
         content_type :json
         skip = validate_skip(params[:skip])
         limit =  validate_limit(params[:limit])
-        resp = is_token_valid(params[:admin_token])
+        admin_token = params[:admin_token]
+        resp = is_token_valid(admin_token)
         if resp[:status] == 'ok'
           owner_id = resp[:result][:id]
           account = Account.get_by_owner_and_type(owner_id, 'admin')
@@ -144,6 +153,9 @@ module Applications
             generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             applications = Application.get_full_list_with_status('rejected', skip, limit)
+            applications.each do |application|
+              prepare_application(application, admin_token)
+            end
             generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -156,7 +168,8 @@ module Applications
         content_type :json
         skip = validate_skip(params[:skip])
         limit =  validate_limit(params[:limit])
-        resp = is_token_valid(params[:admin_token])
+        admin_token = params[:admin_token]
+        resp = is_token_valid(admin_token)
         if resp[:status] == 'ok'
           owner_id = resp[:result][:id]
           account = Account.get_by_owner_and_type(owner_id, 'admin')
@@ -164,6 +177,9 @@ module Applications
             generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             applications = Application.get_full_list_with_status('rework', skip, limit)
+            applications.each do |application|
+              prepare_application(application, admin_token)
+            end
             generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -176,7 +192,8 @@ module Applications
         content_type :json
         skip = validate_skip(params[:skip])
         limit =  validate_limit(params[:limit])
-        resp = is_token_valid(params[:admin_token])
+        admin_token = params[:admin_token]
+        resp = is_token_valid(admin_token)
         if resp[:status] == 'ok'
           owner_id = resp[:result][:id]
           account = Account.get_by_owner_and_type(owner_id, 'admin')
@@ -184,6 +201,9 @@ module Applications
             generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             applications = Application.get_full_list_with_status('approved', skip, limit)
+            applications.each do |application|
+              prepare_application(application, admin_token)
+            end
             generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -254,6 +274,7 @@ module Applications
           if application.nil? || application[:status] == 'deleted'
             return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
+          prepare_application(application, admin_token)
           generate_response('ok', application, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           generate_response('error', { :description => 'USER DOES NOT EXIST' })

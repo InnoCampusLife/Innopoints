@@ -1,4 +1,4 @@
-require 'sinatra/base'
+require 'sinatra'
 require 'json'
 require 'httparty'
 require_relative 'config'
@@ -7,7 +7,6 @@ require_relative 'routes/shop/init'
 require_relative 'models/init'
 require_relative 'helpers/helper'
 require_relative './env' if File.exists?('env.rb')
-
 
 class MyApp < Sinatra::Base
 
