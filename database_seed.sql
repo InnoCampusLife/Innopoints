@@ -1,4 +1,7 @@
 USE innopoints;
+DELETE FROM Files;
+DELETE FROM Works;
+DELETE FROM Applications;
 DELETE FROM Activities;
 DELETE FROM Categories;
 DELETE FROM Items;
