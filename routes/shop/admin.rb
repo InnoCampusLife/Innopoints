@@ -93,7 +93,7 @@ module Shop
         end
       end
 
-      app.get URL + '/accounts/:token/orders/:order_id' do
+      app.get URL + '/admin/:admin_token/orders/:order_id' do
         content_type :json
         token = params[:admin_token]
         order_id = validate_integer(params[:order_id])
