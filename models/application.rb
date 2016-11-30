@@ -51,7 +51,7 @@ class Application
   end
 
   def self.get_users_application_counter(account_id, status=nil)
-    uery_string = ""
+    query_string = ""
     if status.nil?
       query_string += "AND status<>'deleted'"
     else
