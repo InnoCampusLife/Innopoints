@@ -96,7 +96,7 @@ module Applications
                     if transaction.nil?
                       return generate_response('fail', nil, 'ERROR WHILE CREATING TRANSACTION', SERVER_ERROR_CODE)
                     end
-                    Account.update_points_amount(target_account[:id], target_account[:points_amount] + points_amount)
+                    Account.update_points_amount(target_account[:id], target_account[:points_amount].to_i + points_amount.to_i)
                     return generate_response('ok', { description: 'POINTS AMOUNT WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE)
                   when 'decrease'
                     transactions = Transaction.get_list_active_by_account(target_account[:id])
@@ -132,7 +132,8 @@ module Applications
             applications.each do |application|
               prepare_application(application, admin_token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Application.get_application_list_counter('in_process')
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -156,7 +157,8 @@ module Applications
             applications.each do |application|
               prepare_application(application, admin_token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Application.get_application_list_counter('rejected')
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -180,7 +182,8 @@ module Applications
             applications.each do |application|
               prepare_application(application, admin_token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Application.get_application_list_counter('rework')
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -204,7 +207,8 @@ module Applications
             applications.each do |application|
               prepare_application(application, admin_token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Application.get_application_list_counter('approved')
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -323,7 +327,7 @@ module Applications
               to_insert.each do |acc_id, points|
                 Transaction.create(acc_id, points)
                 account = Account.get_by_id(acc_id)
-                Account.update_points_amount(acc_id, account[:points_amount] + points)
+                Account.update_points_amount(acc_id, account[:points_amount].to_i + points.to_i)
               end
               return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
             when 'to_rework'

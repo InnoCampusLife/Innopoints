@@ -155,7 +155,8 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Applications.get_users_application_counter(account[:id])
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -179,7 +180,8 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Applications.get_users_application_counter(account[:id])
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -203,7 +205,8 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Applications.get_users_application_counter(account[:id])
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -227,7 +230,8 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Applications.get_users_application_counter(account[:id])
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -251,7 +255,8 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            generate_response('ok', applications, nil, SUCCESSFUL_RESPONSE_CODE)
+            counter = Applications.get_users_application_counter(account[:id])
+            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)

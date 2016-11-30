@@ -34,12 +34,34 @@ class Application
     applications
   end
 
+  def self.get_application_list_counter(status)
+    counter = 0
+    DB.query("SELECT count(id) as counter FROM Applications WHERE status='#{status}';").each do |row|
+      counter = row[:counter]
+    end
+    counter
+  end
+
   def self.get_full_list_with_status(status, skip, limit)
     applications = Array.new
     DB.query("SELECT id FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
       applications.push(get_full_by_id(row[:id]))
     end
     applications
+  end
+
+  def self.get_users_application_counter(account_id, status=nil)
+    uery_string = ""
+    if status.nil?
+      query_string += "AND status<>'deleted'"
+    else
+      query_string += "AND status='#{status}'"
+    end
+    counter = 0
+    DB.query("SELECT count(id) as counter FROM Applications WHERE author=#{account_id} #{query_string}").each do |row|
+      counter = row[:counter]
+    end
+    counter
   end
 
   def self.get_full_list_users_application(account_id, skip, limit, status=nil)

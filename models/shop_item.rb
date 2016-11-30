@@ -115,19 +115,17 @@ class ShopItem
 
   def self.get_main_by_id(id)
     result_item = Hash.new
-    result_item[:combinations] = Hash.new
+    result_item[:combinations] = Array.new
     parent_item = nil
     image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
     DB.query("SELECT * FROM Items WHERE id=#{id} AND parent is null;", cast_booleans: true).each do |row|
       parent_item = row
-      tmp = Hash.new
       tmp_value = Hash.new
-      options_number = 0
+      tmp = Hash.new
       (1..3).each do |i|
         if row[('option' + i.to_s).to_sym].nil?
           break
         end
-        options_number = i
         tmp[row[('option' + i.to_s).to_sym]] = row[('value' + i.to_s).to_sym]
       end
       # if options_number == 0
@@ -135,10 +133,14 @@ class ShopItem
       #   result_item[:quantity] = row[:quantity]
       #   result_item[:combinations] = nil
       # else
-        tmp_value[:id] = row[:id]
-        tmp_value[:quantity] = row[:quantity]
-        result_item[:combinations][tmp] = tmp_value
+      #   tmp_value[:id] = row[:id]
+      #   tmp_value[:quantity] = row[:quantity]
+      #   result_item[:combinations][tmp] = tmp_value
       # end
+      tmp_value[:id] = row[:id]
+      tmp_value[:quantity] = row[:quantity]
+      tmp_value[:options] = tmp
+      result_item[:combinations].push(tmp_value)
       category = ItemCategory.get_by_id(row[:category_id])
       result_item[:category] = category
       result_item[:title] = row[:title]
@@ -160,7 +162,8 @@ class ShopItem
       end
       tmp_value[:id] = row[:id]
       tmp_value[:quantity] = row[:quantity]
-      result_item[:combinations][tmp] = tmp_value
+      tmp_value[:options] = tmp
+      result_item[:combinations].push(tmp_value)
     end
     result_item[:id] = parent_item[:id]
     result_item[:price] = parent_item[:price]
@@ -181,15 +184,15 @@ class ShopItem
         options[parent_item[option.to_sym]].push(item[value.to_sym]) unless options[parent_item[option.to_sym]].include?(item[value.to_sym])
       end
     end
-    result_item[:options] = Array.new
+    result_item[:options] = Hash.new
     options.each do |key, value|
-      result_item[:options].push({
-          title: key,
-          values: value
-                                 })
+      result_item[:options][key] = value
     end
     if result_item[:options].size == 0
       result_item[:options] = nil
+      result_item[:combinations].each do |combination|
+        combination[:options] = nil
+      end
       # result_item.delete(:combinations)
     end
     result_item
