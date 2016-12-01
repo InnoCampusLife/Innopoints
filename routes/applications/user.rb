@@ -155,7 +155,7 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            counter = Applications.get_users_application_counter(account[:id])
+            counter = Application.get_users_application_counter(account[:id])
             generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -180,7 +180,7 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            counter = Applications.get_users_application_counter(account[:id])
+            counter = Application.get_users_application_counter(account[:id])
             generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -205,7 +205,7 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            counter = Applications.get_users_application_counter(account[:id])
+            counter = Application.get_users_application_counter(account[:id])
             generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -230,7 +230,7 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            counter = Applications.get_users_application_counter(account[:id])
+            counter = Application.get_users_application_counter(account[:id])
             generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -255,7 +255,7 @@ CreateApplication
             applications.each do |application|
               prepare_application(application, token)
             end
-            counter = Applications.get_users_application_counter(account[:id])
+            counter = Application.get_users_application_counter(account[:id])
             generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
