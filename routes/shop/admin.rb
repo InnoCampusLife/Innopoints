@@ -5,6 +5,38 @@ module Shop
   module Admin
     def self.registered(app)
 
+      app.get URL + '/admin/:admin_token/accounts/:account_id/orders' do
+        content_type :json
+        skip = validate_skip(params[:skip])
+        limit =  validate_limit(params[:limit])
+        admin_token = params[:admin_token]
+        resp = is_token_valid(admin_token)
+        if resp[:status] == 'ok'
+          owner_id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(owner_id, 'admin')
+          if account.nil?
+            generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          else
+            account_id = validate_integer(params[:account_id])
+            if account_id.nil?
+              return generate_response('fail', nil, 'WRONG ACCOUNT ID', CLIENT_ERROR_CODE)
+            end
+            target_account = Account.get_by_id(account_id)
+            if target_account.nil?
+              generate_response('fail', nil, 'TARGET USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+            else
+              orders = Order.get_list_by_account_id(account_id, skip, limit)
+              orders.each do |order|
+                prepare_order(order, admin_token)
+              end
+              generate_response('ok', orders, nil, SUCCESSFUL_RESPONSE_CODE)
+            end
+          end
+        else
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
       app.get URL + '/admin/:admin_token/orders/in_process' do
         content_type :json
         token = params[:admin_token]

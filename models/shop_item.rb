@@ -184,9 +184,15 @@ class ShopItem
         options[parent_item[option.to_sym]].push(item[value.to_sym]) unless options[parent_item[option.to_sym]].include?(item[value.to_sym])
       end
     end
-    result_item[:options] = Hash.new
+    result_item[:options] = Array.new
     options.each do |key, value|
-      result_item[:options][key] = value
+      obj = {
+          title: key,
+          values: value
+      }
+      # result_item[:options][:title] = key
+      # result_item[:options][:values] = value
+      result_item[:options].push(obj)
     end
     if result_item[:options].size == 0
       result_item[:options] = nil

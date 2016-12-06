@@ -55,6 +55,40 @@ module Applications
         end
       end
 
+# GetAccount'sApplications
+      app.get URL + '/admin/:admin_token/accounts/:account_id/applications' do
+        content_type :json
+        skip = validate_skip(params[:skip])
+        limit =  validate_limit(params[:limit])
+        admin_token = params[:admin_token]
+        resp = is_token_valid(admin_token)
+        if resp[:status] == 'ok'
+          owner_id = resp[:result][:id]
+          account = Account.get_by_owner_and_type(owner_id, 'admin')
+          if account.nil?
+            generate_response('fail', nil, 'USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+          else
+            account_id = validate_integer(params[:account_id])
+            if account_id.nil?
+              return generate_response('fail', nil, 'WRONG ACCOUNT ID', CLIENT_ERROR_CODE)
+            end
+            target_account = Account.get_by_id(account_id)
+            if target_account.nil?
+              generate_response('fail', nil, 'TARGET USER DOES NOT EXIST', CLIENT_ERROR_CODE)
+            else
+              applications = Application.get_full_list_users_application(account_id, skip, limit)
+              applications.each do |application|
+                prepare_application(application, admin_token)
+              end
+              counter = Application.get_users_application_counter(account_id)
+              generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
+            end
+          end
+        else
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
 # UpdateAccount
       app.put URL + '/admin/:admin_token/accounts/:account_id' do
         content_type :json
@@ -180,6 +214,7 @@ module Applications
           else
             applications = Application.get_full_list_with_status('rework', skip, limit)
             applications.each do |application|
+              application[:rework_comment] = ReworkComment.get_rework_comment(application[:id])
               prepare_application(application, admin_token)
             end
             counter = Application.get_application_list_counter('rework')
@@ -331,7 +366,18 @@ module Applications
               end
               return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
             when 'to_rework'
+              res = validate_input
+              if res[:status] == 'fail'
+                return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+              end
+              comment = res[:result][:comment]
               Application.update_status(application_id, 'rework')
+              rework_comment = ReworkComment.get_rework_comment(application_id)
+              if rework_comment.nil?
+                ReworkComment.create(application_id, comment)
+              else
+                ReworkComment.update(application_id, comment)
+              end
               return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
             else
               return generate_response('fail', nil, 'WRONG ACTION', CLIENT_ERROR_CODE)

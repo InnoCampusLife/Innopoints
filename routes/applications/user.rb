@@ -228,6 +228,7 @@ CreateApplication
           else
             applications = Application.get_full_list_users_application(account[:id], skip, limit, 'rework')
             applications.each do |application|
+              application[:rework_comment] = ReworkComment.get_rework_comment(application[:id])
               prepare_application(application, token)
             end
             counter = Application.get_users_application_counter(account[:id])
