@@ -78,6 +78,9 @@ module Applications
             else
               applications = Application.get_full_list_users_application(account_id, skip, limit)
               applications.each do |application|
+                if application[:status] == 'rework'
+                  application[:rework_comment] = ReworkComment.get_rework_comment(application[:id])
+                end
                 prepare_application(application, admin_token)
               end
               counter = Application.get_users_application_counter(account_id)
