@@ -1,14 +1,29 @@
 USE innopoints;
-DELETE FROM Files;
-DELETE FROM Works;
-DELETE FROM Applications;
-DELETE FROM Activities;
-DELETE FROM Categories;
+
+DELETE FROM OrderContributors;
+ALTER TABLE OrderContributors AUTO_INCREMENT = 1;
+DELETE FROM ItemsInOrder;
+ALTER TABLE ItemsInOrder AUTO_INCREMENT = 1;
+DELETE FROM Orders;
+ALTER TABLE Orders AUTO_INCREMENT = 1;
 DELETE FROM Items;
-DELETE FROM ItemCategories;
-ALTER TABLE Categories AUTO_INCREMENT = 1;
-ALTER TABLE ItemCategories AUTO_INCREMENT = 1;
 ALTER TABLE Items AUTO_INCREMENT = 1;
+DELETE FROM ItemCategories;
+ALTER TABLE ItemCategories AUTO_INCREMENT = 1;
+DELETE FROM Files;
+ALTER TABLE Files AUTO_INCREMENT = 1;
+DELETE FROM Works;
+ALTER TABLE Works AUTO_INCREMENT = 1;
+DELETE FROM ReworkComments;
+ALTER TABLE ReworkComments AUTO_INCREMENT = 1;
+DELETE FROM Applications;
+ALTER TABLE Applications AUTO_INCREMENT = 1;
+DELETE FROM Activities;
+ALTER TABLE Activities AUTO_INCREMENT = 1;
+DELETE FROM Categories;
+ALTER TABLE Categories AUTO_INCREMENT = 1;
+DELETE FROM Transactions;
+ALTER TABLE Transactions AUTO_INCREMENT = 1;
 
 INSERT INTO Categories (id, title) VALUES (DEFAULT , 'Category 1');
 INSERT INTO Categories (id, title) VALUES (DEFAULT , 'Category 2');
