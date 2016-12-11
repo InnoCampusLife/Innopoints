@@ -42,11 +42,13 @@ module ValidationHelpers
         application[:author][:id] = author
         application[:author][:username] = get_username(author, token)
       end
-      application[:work].each do |work|
-        actor = work[:actor]
-        work[:actor] = Hash.new
-        work[:actor][:id] = actor
-        work[:actor][:username] = get_username(actor, token)
+      unless application[:work].nil?
+        application[:work].each do |work|
+          actor = work[:actor]
+          work[:actor] = Hash.new
+          work[:actor][:id] = actor
+          work[:actor][:username] = get_username(actor, token)
+        end
       end
     end
 
@@ -57,8 +59,10 @@ module ValidationHelpers
         order[:author][:id] = author
         order[:author][:username] = get_username(author, token)
       end
-      order[:contributors].each do |contributor|
-        contributor[:username] = get_username(contributor[:id], token)
+      unless order[:contributors].nil?
+        order[:contributors].each do |contributor|
+          contributor[:username] = get_username(contributor[:id], token)
+        end
       end
     end
 
