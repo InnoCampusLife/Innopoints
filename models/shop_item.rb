@@ -5,7 +5,7 @@ require_relative 'item_category'
 class ShopItem
   def self.get_by_id(id)
     item = nil
-    DB.query("SELECT * FROM Items WHERE id=#{id};").each do |row|
+    DB.query("SELECT * FROM Items WHERE id=#{id} AND is_deleted=0;").each do |row|
       item = row
     end
     item
@@ -19,7 +19,7 @@ class ShopItem
       fields = fields_to_sort[0]
     end
     items = Array.new
-    DB.query("SELECT id FROM Items WHERE parent is null ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit}").each do |row|
+    DB.query("SELECT id FROM Items WHERE parent is null AND is_deleted=0 ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit}").each do |row|
       items.push(get_main_by_id(row[:id]))
     end
     items
@@ -34,7 +34,7 @@ class ShopItem
     end
     items = Array.new
     image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
-    DB.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id = ic.id ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
+    DB.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id = ic.id AND is_deleted=0 ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
       items.push({
           id: row[:id],
           title: row[:title],
@@ -57,7 +57,7 @@ class ShopItem
       fields = fields_to_sort[0]
     end
     items = Array.new
-    DB.query("SELECT id FROM Items WHERE parent is null AND category_id=#{category_id} ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
+    DB.query("SELECT id FROM Items WHERE parent is null AND category_id=#{category_id} AND is_deleted=0 ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
       items.push(get_main_by_id(row[:id]))
     end
     items
@@ -72,7 +72,7 @@ class ShopItem
     end
     items = Array.new
     image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
-    DB.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id=#{category_id} AND i.category_id = ic.id ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
+    DB.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id=#{category_id} AND i.category_id = ic.id AND is_deleted=0 ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
       puts row
       items.push({
                      id: row[:id],
@@ -99,7 +99,7 @@ class ShopItem
       end
     end
     stored_items = Hash.new
-    DB.query("SELECT * FROM Items WHERE #{query_string};", cast_booleans: true).each do |row|
+    DB.query("SELECT * FROM Items WHERE #{query_string} ;", cast_booleans: true).each do |row|
       stored_items[row[:id]] = row
     end
     if stored_items.size < item_ids_hash.size
@@ -118,7 +118,7 @@ class ShopItem
     result_item[:combinations] = Array.new
     parent_item = nil
     image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
-    DB.query("SELECT * FROM Items WHERE id=#{id} AND parent is null;", cast_booleans: true).each do |row|
+    DB.query("SELECT * FROM Items WHERE id=#{id} AND parent is null AND is_deleted=0;", cast_booleans: true).each do |row|
       parent_item = row
       tmp_value = Hash.new
       tmp = Hash.new
@@ -150,7 +150,7 @@ class ShopItem
       return nil
     end
     child_items = Array.new
-    DB.query("SELECT * FROM Items WHERE parent=#{parent_item[:id]}").each do |row|
+    DB.query("SELECT * FROM Items WHERE parent=#{parent_item[:id]} AND is_deleted=0").each do |row|
       child_items.push(row)
       tmp = Hash.new
       tmp_value = Hash.new

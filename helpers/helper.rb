@@ -304,7 +304,8 @@ module ValidationHelpers
         if activity.nil?
           return { status: 'fail', description: 'ACTIVITY DOES NOT EXIST' }
         end
-        if (activity[:type] == 'permanent' && !work[:amount].nil?) || ((activity[:type] == 'hourly' || activity[:type] == 'quantity') && (validate_integer(work[:amount]).nil? || validate_integer(work[:amount]) <= 0 ))
+        if (activity[:type] == 'permanent' && !work[:amount].nil?) ||
+            ((activity[:type] == 'hourly' || activity[:type] == 'quantity') && (validate_integer(work[:amount]).nil? || validate_integer(work[:amount]) <= 0 ))
           return { status: 'fail', description: 'WRONG AMOUNT' }
         end
         account = Account.get_by_owner(work[:actor])

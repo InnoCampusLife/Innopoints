@@ -45,7 +45,7 @@ module Applications
               generate_response('fail', nil, 'CAN\'T CREATE AN ACCOUNT', SERVER_ERROR_CODE)
             else
               account_info = Account.to_info(account)
-              FileUtils::mkdir_p(Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s)
+              # FileUtils::mkdir_p(Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s)
               prepare_account(account_info, token)
               generate_response('ok', account_info, nil, SUCCESSFUL_RESPONSE_CODE)
             end
@@ -112,8 +112,8 @@ CreateApplication
                 return generate_response('fail', nil, 'ERROR WHILE CREATING WORK OCCURED', SERVER_ERROR_CODE)
               end
             end
-            folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + created_application[:id].to_s
-            FileUtils::mkdir_p(folder)
+            # folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + created_application[:id].to_s
+            # FileUtils::mkdir_p(folder)
             # application[:files].each do |file|
             #   file_name = file[:filename]
             #   name_parts = file_name.split('.')
@@ -353,7 +353,7 @@ GetApplication
               return generate_response('fail', nil, 'FILE DOES NOT EXIST', CLIENT_ERROR_CODE)
             end
             if account[:type] == 'admin'
-              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + file[:account_id].to_s + '/' + file[:application_id].to_s + '/' + file_id.to_s + file[:extension]
+              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + file_id.to_s + file[:extension]
               if File.exists?(file_url)
                 send_file file_url, :filename => file[:filename], :type => 'Application/octet-stream'
               else
@@ -363,7 +363,7 @@ GetApplication
               unless account[:id] == file[:account_id]
                 return generate_response('fail', nil, 'USER DOES NOT HAVE ACCESS TO THE FILE', SERVER_ERROR_CODE)
               end
-              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + file[:account_id].to_s + '/' + file[:application_id].to_s + '/' + file_id.to_s + file[:extension]
+              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + file_id.to_s + file[:extension]
               if File.exists?(file_url)
                 send_file file_url, :filename => file[:filename], :type => 'Application/octet-stream'
               else

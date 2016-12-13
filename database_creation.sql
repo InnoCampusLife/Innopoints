@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS  Activities (
   main_option_exists BOOLEAN, # for version 2.0
   additional_exists BOOLEAN, # for version 2.0
   price int, #for version 1.0
+  is_deleted BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (category_id) REFERENCES Categories(id)
 );
 
@@ -102,9 +103,9 @@ CREATE TABLE IF NOT EXISTS Works (
 CREATE TABLE IF NOT EXISTS Files (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
   filename TEXT NOT NULL ,
-  type TEXT NOT NULL ,
+#   type TEXT NOT NULL ,
   extension VARCHAR(30),
-  download_link TEXT NOT NULL,
+#   download_link TEXT NOT NULL,
   application_id INT,
   FOREIGN KEY (application_id) REFERENCES Applications(id)
 );
@@ -129,6 +130,7 @@ CREATE TABLE IF NOT EXISTS Items (
   possible_joint_purchase BOOLEAN,
   max_buyers INT,
   parent INT,
+  is_deleted BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (category_id) REFERENCES ItemCategories(id)
 );
 
