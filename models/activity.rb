@@ -12,7 +12,7 @@ class Activity
 
   def self.get_by_id_with_category(id)
     activity = nil
-    DB.query("select a.id, a.title, a.type, a.price, a.category_id, c.title as category_title from Categories as c, Activities as a WHERE c.id = a.category_id AND a.id=#{id} AND is_deleted=0;").each do |row|
+    DB.query("select a.id, a.title, a.type, a.price, a.category_id, c.title as category_title from Categories as c, Activities as a WHERE c.id = a.category_id AND a.id=#{id};").each do |row|
       activity = {
                           id: row[:id],
                           title: row[:title],
