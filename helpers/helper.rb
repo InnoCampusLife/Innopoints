@@ -224,7 +224,7 @@ module ValidationHelpers
     end
 
     def is_uis_user_exists(token, id)
-      resp = JSON.parse(HTTParty.get(ACCOUNTS_URL + token + '/exists?id=' + id), symbolize_names: true)
+      resp = JSON.parse(HTTParty.get(ACCOUNTS_URL + token + '/exists?id=' + id).body, symbolize_names: true)
       if resp[:status] == 'ok' && resp[:result]
         return true
       end
