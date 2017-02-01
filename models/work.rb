@@ -4,15 +4,15 @@ class Work
     if amount.nil?
       amount = 'NULL'
     end
-    DB.query("INSERT INTO Works VALUES (default, #{actor}, #{activity_id}, NULL, NULL, #{amount}, #{application_id});")
-    id = DB.last_id
+    DatabaseHandler.connection.query("INSERT INTO Works VALUES (default, #{actor}, #{activity_id}, NULL, NULL, #{amount}, #{application_id});")
+    id = DatabaseHandler.connection.last_id
     work = get_by_id(id)
     work
   end
 
   def self.get_by_id(id)
     work = nil
-    DB.query("SELECT * FROM Works WHERE id=#{id}").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Works WHERE id=#{id}").each do |row|
       work = row
     end
     work
@@ -20,7 +20,7 @@ class Work
 
   def self.get_list_by_application_id(application_id)
     works = Array.new
-    DB.query("SELECT * FROM Works WHERE application_id=#{application_id};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Works WHERE application_id=#{application_id};").each do |row|
       works.push(row)
     end
     return works
@@ -28,7 +28,7 @@ class Work
 
   def self.get_by_application_id_and_actor(application_id, actor)
     work = nil
-    DB.query("SELECT * FROM Works WHERE application_id=#{application_id} AND actor=#{actor};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Works WHERE application_id=#{application_id} AND actor=#{actor};").each do |row|
       work = row
     end
     work
@@ -50,14 +50,14 @@ class Work
         update_query += ', '
       end
     end
-    DB.query("UPDATE Works SET #{update_query} WHERE id=#{work_id};")
+    DatabaseHandler.connection.query("UPDATE Works SET #{update_query} WHERE id=#{work_id};")
   end
 
   def self.delete_all_by_application_id(application_id)
-    DB.query("DELETE FROM Works WHERE application_id=#{application_id};")
+    DatabaseHandler.connection.query("DELETE FROM Works WHERE application_id=#{application_id};")
   end
 
   def self.delete_by_id(id)
-    DB.query("DELETE FROM Works WHERE id=#{id};")
+    DatabaseHandler.connection.query("DELETE FROM Works WHERE id=#{id};")
   end
 end

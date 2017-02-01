@@ -7,15 +7,15 @@ class Order
       status = 'in_process'
     end
     order = nil
-    DB.query("INSERT INTO Orders VALUES (default, '#{status}', now(), #{is_joint_purchase}, #{account_id}, #{total_price});")
-    id = DB.last_id
+    DatabaseHandler.connection.query("INSERT INTO Orders VALUES (default, '#{status}', now(), #{is_joint_purchase}, #{account_id}, #{total_price});")
+    id = DatabaseHandler.connection.last_id
     order = get_by_id(id)
     order
   end
 
   def self.get_by_id(order_id)
     order = nil
-    DB.query("SELECT * FROM Orders WHERE id=#{order_id}", cast_booleans: true).each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Orders WHERE id=#{order_id}", cast_booleans: true).each do |row|
       order = row
       order[:creation_date] = order[:creation_date].to_i
     end
@@ -24,7 +24,7 @@ class Order
 
   def self.get_full_by_id(order_id)
     order = nil
-    DB.query("SELECT * FROM Orders WHERE id=#{order_id};", cast_booleans: true).each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Orders WHERE id=#{order_id};", cast_booleans: true).each do |row|
       order = row
     end
     if order.nil?
@@ -85,7 +85,7 @@ class Order
       query_string += " WHERE status='#{status}'"
     end
     orders = Array.new
-    DB.query("SELECT * FROM Orders #{query_string} LIMIT #{skip}, #{limit};", cast_booleans: true).each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Orders #{query_string} LIMIT #{skip}, #{limit};", cast_booleans: true).each do |row|
       orders.push(row)
     end
     result_orders = Array.new
@@ -149,7 +149,7 @@ class Order
       query_string += " AND status='#{status}'"
     end
     orders = Array.new
-    DB.query("SELECT * FROM Orders WHERE #{query_string} LIMIT #{skip}, #{limit};", cast_booleans: true).each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Orders WHERE #{query_string} LIMIT #{skip}, #{limit};", cast_booleans: true).each do |row|
       orders.push(row)
     end
     account = Account.get_by_id(account_id)
@@ -206,11 +206,11 @@ class Order
   end
 
   def self.update_status(order_id, status)
-    DB.query("UPDATE Orders SET status='#{status}' WHERE id=#{order_id}")
+    DatabaseHandler.connection.query("UPDATE Orders SET status='#{status}' WHERE id=#{order_id}")
   end
 
   def self.delete_by_id(id)
-    # DB.query("DELETE FROM Orders WHERE id=#{id}")
-    DB.query("UPDATE Orders SET status='deleted' WHERE id=#{id};")
+    # DatabaseHandler.connection.query("DELETE FROM Orders WHERE id=#{id}")
+    DatabaseHandler.connection.query("UPDATE Orders SET status='deleted' WHERE id=#{id};")
   end
 end

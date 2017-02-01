@@ -5,7 +5,7 @@ class Category
   def self.get_list(skip, limit)
     categories = Array.new
     # LIMIT #{skip}, #{limit}
-    DB.query("SELECT * FROM Categories;").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Categories;").each do |row|
       puts row
       categories.push({
           id: row[:id],

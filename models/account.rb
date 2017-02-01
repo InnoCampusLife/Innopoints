@@ -8,14 +8,14 @@ class Account
     end
     # creation_date = DateTime.now
     #TODO fix the time
-    DB.query("INSERT INTO Accounts VALUES (default, '#{DB.escape(owner)}', '#{type}', #{points_amount}, NOW());")
+    DatabaseHandler.connection.query("INSERT INTO Accounts VALUES (default, '#{DatabaseHandler.connection.escape(owner)}', '#{type}', #{points_amount}, NOW());")
     account = get_by_owner(owner)
     account
   end
 
   def self.get_by_id(id)
     account = nil
-    DB.query("SELECT * FROM Accounts WHERE id=#{id};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Accounts WHERE id=#{id};").each do |row|
       account = {
           id: row[:id],
           owner: row[:owner],
@@ -29,7 +29,7 @@ class Account
 
   def self.get_by_owner_and_type(id, type)
     account = nil
-    DB.query("SELECT * FROM Accounts WHERE owner='#{id}' AND type='#{type}';").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Accounts WHERE owner='#{id}' AND type='#{type}';").each do |row|
       account = {
           id: row[:id],
           owner: row[:owner],
@@ -43,7 +43,7 @@ class Account
 
   def self.get_list(skip, limit)
     accounts = Array.new
-    DB.query("SELECT * FROM Accounts WHERE type='student' LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Accounts WHERE type='student' LIMIT #{skip}, #{limit};").each do |row|
       accounts.push({
           id: row[:id],
           owner: row[:owner],
@@ -55,7 +55,7 @@ class Account
 
   def self.get_by_owner(owner)
     account = nil
-    DB.query("SELECT * FROM Accounts WHERE owner='#{owner}';").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Accounts WHERE owner='#{owner}';").each do |row|
       account = {
           id: row[:id],
           owner: row[:owner],
@@ -68,7 +68,7 @@ class Account
   end
 
   def self.update_points_amount(id, points_amount)
-    DB.query("UPDATE Accounts SET points_amount=#{points_amount} WHERE id=#{id}")
+    DatabaseHandler.connection.query("UPDATE Accounts SET points_amount=#{points_amount} WHERE id=#{id}")
   end
 
   def self.to_info(account)

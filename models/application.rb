@@ -10,15 +10,15 @@ class Application
     if comment.nil?
       comment = ''
     end
-    DB.query("INSERT INTO Applications VALUES (default,#{author}, '#{type}', '#{DB.escape(comment)}', 'in_process', NOW());")
-    id = DB.last_id
+    DatabaseHandler.connection.query("INSERT INTO Applications VALUES (default,#{author}, '#{type}', '#{DatabaseHandler.connection.escape(comment)}', 'in_process', NOW());")
+    id = DatabaseHandler.connection.last_id
     application = get_by_id(id)
     application
   end
 
   def self.get_list_with_status(status, skip, limit)
     applications = Array.new
-    DB.query("SELECT * FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
       account = Account.get_by_id(row[:author])
       applications.push({
                             id: row[:id],
@@ -36,7 +36,7 @@ class Application
 
   def self.get_application_list_counter(status)
     counter = 0
-    DB.query("SELECT count(id) as counter FROM Applications WHERE status='#{status}';").each do |row|
+    DatabaseHandler.connection.query("SELECT count(id) as counter FROM Applications WHERE status='#{status}';").each do |row|
       counter = row[:counter]
     end
     counter
@@ -44,7 +44,7 @@ class Application
 
   def self.get_full_list_with_status(status, skip, limit)
     applications = Array.new
-    DB.query("SELECT id FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT id FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
       applications.push(get_full_by_id(row[:id]))
     end
     applications
@@ -58,7 +58,7 @@ class Application
       query_string += "AND status='#{status}'"
     end
     counter = 0
-    DB.query("SELECT count(id) as counter FROM Applications WHERE author=#{account_id} #{query_string}").each do |row|
+    DatabaseHandler.connection.query("SELECT count(id) as counter FROM Applications WHERE author=#{account_id} #{query_string}").each do |row|
       counter = row[:counter]
     end
     counter
@@ -72,7 +72,7 @@ class Application
     else
       query_string += "AND status='#{status}'"
     end
-    DB.query("SELECT id FROM Applications WHERE author=#{account_id} #{query_string} LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT id FROM Applications WHERE author=#{account_id} #{query_string} LIMIT #{skip}, #{limit};").each do |row|
         applications.push(get_full_by_id(row[:id]))
     end
     applications
@@ -82,7 +82,7 @@ class Application
     applications = Array.new
     account = Account.get_by_id(account_id)
     if status.nil?
-      DB.query("SELECT * FROM Applications WHERE author=#{account_id} LIMIT #{skip}, #{limit};").each do |row|
+      DatabaseHandler.connection.query("SELECT * FROM Applications WHERE author=#{account_id} LIMIT #{skip}, #{limit};").each do |row|
         applications.push({
             id: row[:id],
             author: account[:owner],
@@ -92,7 +92,7 @@ class Application
                           })
       end
     else
-      DB.query("SELECT * FROM Applications WHERE author=#{account_id} AND status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+      DatabaseHandler.connection.query("SELECT * FROM Applications WHERE author=#{account_id} AND status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
         applications.push({
                               id: row[:id],
                               author: account[:owner],
@@ -107,7 +107,7 @@ class Application
 
   def self.get_by_id(id)
     application = nil
-    DB.query("SELECT * FROM Applications WHERE id=#{id};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE id=#{id};").each do |row|
       application = row
       application[:creation_date] = application[:creation_date].to_i
     end
@@ -116,7 +116,7 @@ class Application
 
   def self.get_full_by_id(id)
     application = nil
-    DB.query("SELECT * FROM Applications WHERE id=#{id};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE id=#{id};").each do |row|
       application = row
     end
     if application.nil?
@@ -158,7 +158,7 @@ class Application
 
   def self.get_by_id_and_author(id, author)
     application = nil
-    DB.query("SELECT * FROM Applications WHERE id=#{id} AND author=#{author};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE id=#{id} AND author=#{author};").each do |row|
       application = row
       application[:creation_date] = application[:creation_date].to_i
     end
@@ -167,7 +167,7 @@ class Application
 
   def self.get_full_by_id_and_author(id, author)
     application = nil
-    DB.query("SELECT * FROM Applications WHERE id=#{id} AND author=#{author};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE id=#{id} AND author=#{author};").each do |row|
       application = row
     end
     if application.nil?
@@ -208,17 +208,17 @@ class Application
   end
 
   def self.update_comment(id, comment)
-    DB.query("UPDATE Applications SET comment='#{DB.escape(comment)}' WHERE id=#{id};")
+    DatabaseHandler.connection.query("UPDATE Applications SET comment='#{DatabaseHandler.connection.escape(comment)}' WHERE id=#{id};")
   end
 
   def self.update_status(id, status)
-    DB.query("UPDATE Applications SET status='#{status}' WHERE id=#{id};")
+    DatabaseHandler.connection.query("UPDATE Applications SET status='#{status}' WHERE id=#{id};")
   end
 
   def self.delete_by_id(id)
-    DB.query("UPDATE Applications SET status='deleted' WHERE id=#{id};")
+    DatabaseHandler.connection.query("UPDATE Applications SET status='deleted' WHERE id=#{id};")
     # Work.delete_all_by_application_id(id)
     # StoredFile.delete_all_by_application_id(id)
-    # DB.query("DELETE FROM Applications WHERE id=#{id};")
+    # DatabaseHandler.connection.query("DELETE FROM Applications WHERE id=#{id};")
   end
 end

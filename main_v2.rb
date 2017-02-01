@@ -16,6 +16,10 @@ class MyApp < Sinatra::Base
   set :bind, WEB_HOST
   set :port, WEB_PORT
 
+  def self.setup_database
+    DatabaseHandler.setup
+  end
+
   helpers ValidationHelpers
   register OptionsHandler
   register Applications::User
@@ -24,5 +28,7 @@ class MyApp < Sinatra::Base
   register Shop::User
   register Shop::Admin
   register Shop::General
-  run!
 end
+
+MyApp.setup_database
+MyApp.run!
