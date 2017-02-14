@@ -46,7 +46,7 @@ MYSQL_DB_NAME = 'innopoints'
 MYSQL_DB_USER = 'innopoints_user'
 MYSQL_DB_PASSWORD = 'innopoints2.0'
 
-DEFAULT_LIMIT = 20
+DEFAULT_LIMIT = 50
 DEFAULT_SORT_ORDER = 'ASC'
 DEFAULT_ITEMS_SORT_FIELD = 'title'
 

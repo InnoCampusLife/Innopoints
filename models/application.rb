@@ -18,7 +18,7 @@ class Application
 
   def self.get_list_with_status(status, skip, limit)
     applications = Array.new
-    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT * FROM Applications WHERE status='#{status}' ORDER BY creation_date DESC LIMIT #{skip}, #{limit};").each do |row|
       account = Account.get_by_id(row[:author])
       applications.push({
                             id: row[:id],
@@ -44,7 +44,7 @@ class Application
 
   def self.get_full_list_with_status(status, skip, limit)
     applications = Array.new
-    DatabaseHandler.connection.query("SELECT id FROM Applications WHERE status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT id FROM Applications WHERE status='#{status}' ORDER BY creation_date DESC LIMIT #{skip}, #{limit};").each do |row|
       applications.push(get_full_by_id(row[:id]))
     end
     applications
@@ -72,7 +72,7 @@ class Application
     else
       query_string += "AND status='#{status}'"
     end
-    DatabaseHandler.connection.query("SELECT id FROM Applications WHERE author=#{account_id} #{query_string} LIMIT #{skip}, #{limit};").each do |row|
+    DatabaseHandler.connection.query("SELECT id FROM Applications WHERE author=#{account_id} #{query_string} ORDER BY creation_date DESC LIMIT #{skip}, #{limit};").each do |row|
         applications.push(get_full_by_id(row[:id]))
     end
     applications
@@ -82,7 +82,7 @@ class Application
     applications = Array.new
     account = Account.get_by_id(account_id)
     if status.nil?
-      DatabaseHandler.connection.query("SELECT * FROM Applications WHERE author=#{account_id} LIMIT #{skip}, #{limit};").each do |row|
+      DatabaseHandler.connection.query("SELECT * FROM Applications WHERE author=#{account_id} ORDER BY creation_date DESC LIMIT #{skip}, #{limit};").each do |row|
         applications.push({
             id: row[:id],
             author: account[:owner],
@@ -92,7 +92,7 @@ class Application
                           })
       end
     else
-      DatabaseHandler.connection.query("SELECT * FROM Applications WHERE author=#{account_id} AND status='#{status}' LIMIT #{skip}, #{limit};").each do |row|
+      DatabaseHandler.connection.query("SELECT * FROM Applications WHERE author=#{account_id} AND status='#{status}' ORDER BY creation_date DESC LIMIT #{skip}, #{limit};").each do |row|
         applications.push({
                               id: row[:id],
                               author: account[:owner],
