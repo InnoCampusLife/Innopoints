@@ -3,7 +3,7 @@ require 'sinatra'
 module Applications
   module Admin
     def self.registered(app)
-
+# GetAccounts
       app.get URL + '/admin/:admin_token/accounts' do
         content_type :json
         admin_token = params[:admin_token]
@@ -129,11 +129,7 @@ module Applications
               else
                 case action
                   when 'increase'
-                    transaction = Transaction.create(target_account[:id], points_amount)
-                    if transaction.nil?
-                      return generate_response('fail', nil, 'ERROR WHILE CREATING TRANSACTION', SERVER_ERROR_CODE)
-                    end
-                    Account.update_points_amount(target_account[:id], target_account[:points_amount].to_i + points_amount.to_i)
+                    deposit_points(target_account[:id], points_amount)
                     return generate_response('ok', { description: 'POINTS AMOUNT WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE)
                   when 'decrease'
                     transactions = Transaction.get_list_active_by_account(target_account[:id])
@@ -288,8 +284,9 @@ module Applications
                 return generate_response('fail', nil, 'ERROR WHILE CREATING WORK OCCURED', SERVER_ERROR_CODE)
               end
             end
-            folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + created_application[:id].to_s
-            FileUtils::mkdir_p(folder)
+            application[:files].each do |file_id|
+              StoredFile.set_application_id(file_id, created_application[:id])
+            end
             generate_response('ok', { :id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
@@ -319,7 +316,7 @@ module Applications
           prepare_application(application, admin_token)
           generate_response('ok', application, nil, SUCCESSFUL_RESPONSE_CODE)
         else
-          generate_response('error', { :description => 'USER DOES NOT EXIST' })
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
       end
 
@@ -342,11 +339,26 @@ module Applications
           if application.nil? || application[:status] == 'deleted'
             return generate_response('fail', nil, 'APPLICATION DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
-          if application[:status] != 'in_process'
-            return generate_response('fail', nil, 'IT IS POSSIBLE ONLY FOR IN PROCESS APPLICATIONS', CLIENT_ERROR_CODE)
+          if application[:status] != 'in_process' && application[:status] != 'approved'
+            return generate_response('fail', nil, 'IT IS NOT POSSIBLE FOR APPLICATION WITH THIS STATUS', CLIENT_ERROR_CODE)
           end
           case params[:action]
             when 'reject'
+              if application[:status] == 'approved'
+                works = Work.get_list_by_application_id(application[:id])
+                to_withdraw = Hash.new
+                works.each do |work|
+                  activity = Activity.get_by_id(work[:activity_id])
+                  if activity[:type] == 'permanent'
+                    to_withdraw.store(work[:actor], activity[:price])
+                  else
+                    to_withdraw.store(work[:actor], activity[:price].to_i * work[:amount])
+                  end
+                end
+                to_withdraw.each do |acc_id, points|
+                  withdraw_points(acc_id, points)
+                end
+              end
               Application.update_status(application_id, 'rejected')
               return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
             when 'approve'
@@ -359,13 +371,10 @@ module Applications
                 else
                   to_insert.store(work[:actor], activity[:price].to_i * work[:amount])
                 end
-                puts to_insert
               end
               Application.update_status(application_id, 'approved')
               to_insert.each do |acc_id, points|
-                Transaction.create(acc_id, points)
-                account = Account.get_by_id(acc_id)
-                Account.update_points_amount(acc_id, account[:points_amount].to_i + points.to_i)
+                deposit_points(acc_id, points)
               end
               return generate_response('ok', { :id => application_id }, nil, SUCCESSFUL_RESPONSE_CODE)
             when 'to_rework'
@@ -386,7 +395,7 @@ module Applications
               return generate_response('fail', nil, 'WRONG ACTION', CLIENT_ERROR_CODE)
           end
         else
-          generate_response('error', { :description => 'USER DOES NOT EXIST' })
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
       end
 
@@ -462,8 +471,95 @@ module Applications
             if application[:comment] != stored_application[:comment]
               Application.update_comment(stored_application[:id], application[:comment])
             end
+            application[:files].each do |file_id|
+              StoredFile.set_application_id(file_id, application_id)
+            end
             generate_response('ok', { id: stored_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
           end
+        else
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+# CreateActivity
+      app.post URL + '/admin/:admin_token/activities' do
+        content_type :json
+        token = params[:admin_token]
+        res = validate_input
+        if res[:status] == 'fail'
+          return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+        end
+        activity = res[:result][:activity]
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          owner = resp[:result][:id]
+          account = Account.get_by_owner_and_type(owner, 'admin')
+          if account.nil?
+            generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
+          else
+            res = validate_activity(activity)
+            if res[:status] == 'fail'
+              return generate_response('fail', nil, res[:description], CLIENT_ERROR_CODE)
+            end
+            created_activity = Activity.create(activity[:title], activity[:comment], activity[:for_approval], activity[:type], activity[:category_id], activity[:price])
+            if created_activity.nil?
+              return generate_response('fail', nil, 'ERROR WHILE ACTIVITY CREATE', SERVER_ERROR_CODE)
+            end
+            generate_response('ok', { id: created_activity[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+          end
+        else
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+# UpdateActivity
+      app.put URL + '/admin/:admin_token/activities/:activity_id' do
+        content_type :json
+        token = params[:admin_token]
+        activity_id = validate_integer(params[:activity_id])
+        if activity_id.nil? || activity_id <= 0
+          return generate_response('fail', nil, 'WRONG ACTIVITY ID', CLIENT_ERROR_CODE)
+        end
+        res = validate_input
+        if res[:status] == 'fail'
+          return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+        end
+        activity = res[:result][:activity]
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          owner = resp[:result][:id]
+          account = Account.get_by_owner_and_type(owner, 'admin')
+          if account.nil?
+            generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
+          else
+            res = validate_activity(activity)
+            if res[:status] == 'fail'
+              return generate_response('fail', nil, res[:description], CLIENT_ERROR_CODE)
+            end
+            stored_activity = Activity.get_by_id(activity_id)
+            if stored_activity.nil?
+              return generate_response('fail', nil, 'ACTIVITY DOES NOT EXIST', CLIENT_ERROR_CODE)
+            end
+            Activity.update(activity_id, activity[:title], activity[:comment], activity[:for_approval], activity[:type], activity[:category_id], activity[:price])
+            generate_response('ok', { description: 'ACTIVITY WAS UPDATED' }, nil, SUCCESSFUL_RESPONSE_CODE)
+          end
+        else
+          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+# DeleteActivity
+      app.delete URL + '/admin/:admin_token/activities/:activity_id' do
+        content_type :json
+        token = params[:admin_token]
+        activity_id = validate_integer(params[:activity_id])
+        return generate_response('fail', nil, 'WRONG ACTIVITY ID', CLIENT_ERROR_CODE) if activity_id.nil? || activity_id <= 0
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          owner = resp[:result][:id]
+          account = Account.get_by_owner_and_type(owner, 'admin')
+          return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE) if account.nil?
+          activity = Activity.get_by_id(activity_id)
+          return generate_response('fail', nil, 'ACTIVITY DOES NOT EXIST', CLIENT_ERROR_CODE) if activity.nil?
+          Activity.delete(activity_id)
+          return generate_response('ok', { description: 'ACTIVITY WAS DELETED' }, nil, SUCCESSFUL_RESPONSE_CODE)
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end

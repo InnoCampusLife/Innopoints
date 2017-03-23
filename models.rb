@@ -41,8 +41,7 @@
     files: [
         {
             _id: 123,
-            filename: 'asd.jpg',
-            type: 'image/jpeg'
+            filename: 'asd.jpg'
         }
     ],
     comment: '',
@@ -73,7 +72,8 @@
 {
     account: 'account id',
     items: [ instances of ShopItem ],
-    total_price: 100
+    total_price: 100,
+    status: '' # in_process, approved, rejected, waiting_to_process, rejected_by_contributor, deleted
 }
 # Activity
 
@@ -81,6 +81,8 @@
     title: '',
     type: '', # hourly/quantity/permanent
     category: 'instance of Category',
+    comment: '',
+    for_approval: '',
     price: 100 # price for one hour, for permanent action or for one action
 }
 

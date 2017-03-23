@@ -147,8 +147,8 @@ module Shop
           order[:items].each do |item|
             ItemInOrder.create(created_order[:id], item[:id], item[:amount])
             # unless order[:is_joint_purchase]
-              stored_item = ShopItem.get_by_id(item[:id])
-              ShopItem.update_quantity(stored_item[:id], stored_item[:quantity] - item[:amount])
+            stored_item = ShopItem.get_by_id(item[:id])
+            ShopItem.update_quantity(stored_item[:id], stored_item[:quantity] - item[:amount])
             # end
           end
           unless order[:is_joint_purchase]

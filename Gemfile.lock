@@ -2,6 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     bson (4.1.1)
+    connection_pool (2.2.1)
     httparty (0.13.7)
       json (~> 1.8)
       multi_xml (>= 0.5.2)
@@ -23,6 +24,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  connection_pool
   httparty
   json
   mongo
@@ -30,4 +32,4 @@ DEPENDENCIES
   sinatra
 
 BUNDLED WITH
-   1.10.6
+   1.13.4

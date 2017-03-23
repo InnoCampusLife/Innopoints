@@ -171,7 +171,7 @@ module Shop
           if order.nil? || order[:status] == 'deleted'
             return generate_response('fail', nil, 'ORDER DOES NOT EXIST', CLIENT_ERROR_CODE)
           end
-          if order[:status] != 'in_process'
+          if order[:status] != 'in_process' && order[:status] != 'approved'
             return generate_response('fail', nil, 'WRONG ORDER STATUS', CLIENT_ERROR_CODE)
           end
           case action
@@ -211,11 +211,19 @@ module Shop
                 contributors = OrderContributor.get_list_by_order_id(order_id)
                 contributors.each do |contributor|
                   contributor_account = Account.get_by_id(contributor[:account_id])
-                  Account.update_points_amount(contributor_account[:id], contributor_account[:points_amount] + contributor[:points_amount])
+                  if order[:status] == 'approved'
+                    deposit_points(contributor[:account_id], contributor[:points_amount])
+                  else
+                    Account.update_points_amount(contributor_account[:id], contributor_account[:points_amount] + contributor[:points_amount])
+                  end
                 end
               else
                 customer_account = Account.get_by_id(order[:account_id])
-                Account.update_points_amount(customer_account[:id], customer_account[:points_amount] + order[:total_price])
+                if order[:status] == 'approved'
+                  deposit_points(customer_account[:id], order[:total_price])
+                else
+                  Account.update_points_amount(customer_account[:id], customer_account[:points_amount] + order[:total_price])
+                end
               end
               Order.update_status(order_id, 'rejected')
               return generate_response('ok', { id: order[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
@@ -224,6 +232,34 @@ module Shop
           return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
       end
+
+      # CreateItem
+      app.post URL + '/admin/:admin_token/items' do
+        content_type :json
+        token = params[:admin_token]
+        res = validate_input
+        if res[:status] == 'fail'
+          return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+        end
+        item = res[:result][:item]
+        resp = is_token_valid(token)
+        if resp[:status] == 'ok'
+          owner = resp[:result][:id]
+          account = Account.get_by_owner_and_type(owner, 'admin')
+          return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE) if account.nil?
+          res = validate_item(item)
+          return generate_response('fail', nil, res[:description], CLIENT_ERROR_CODE) if res[:status] == 'fail'
+          created_item = ShopItem.create(item[:title], item[:options], item[:quantity], item[:price], item[:category_id], item[:possible_joint_purchase], item[:max_buyers])
+          if created_item.nil?
+            return generate_response('fail', nil, 'ERROR WHILE CREATING ITEM', SERVER_ERROR_CODE)
+          end
+          generate_response('ok', { id: created_item[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+        else
+          return generate_response('fail', nil, 'ERROR IN THE ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+        end
+      end
+
+
     end
   end
 end

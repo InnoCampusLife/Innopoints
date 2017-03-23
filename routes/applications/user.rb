@@ -45,7 +45,6 @@ module Applications
               generate_response('fail', nil, 'CAN\'T CREATE AN ACCOUNT', SERVER_ERROR_CODE)
             else
               account_info = Account.to_info(account)
-              # FileUtils::mkdir_p(Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s)
               prepare_account(account_info, token)
               generate_response('ok', account_info, nil, SUCCESSFUL_RESPONSE_CODE)
             end
@@ -57,27 +56,8 @@ module Applications
         end
       end
 
-=begin
-CreateApplication
-{
-  application: {
-    type: 'personal', //'group'
-    work: [
-      {
-        {
-              actor: 1, // id of user in accounts microservice. Has to be the same as id of user with :token if type personal
-              activity_id: 1 // id of activity
-              amount: 3, # null for permanent activities
-          },
-          {
-            ...
-          }
-      }
-    ],
-    comment: ""
-  }
-}
-=end
+
+      # CreateApplication
       app.post URL + '/accounts/:token/applications' do
         content_type :json
         res = validate_input
@@ -112,26 +92,10 @@ CreateApplication
                 return generate_response('fail', nil, 'ERROR WHILE CREATING WORK OCCURED', SERVER_ERROR_CODE)
               end
             end
-            # folder = Dir.pwd + FILES_FOLDER + '/' + account[:id].to_s + '/' + created_application[:id].to_s
-            # FileUtils::mkdir_p(folder)
-            # application[:files].each do |file|
-            #   file_name = file[:filename]
-            #   name_parts = file_name.split('.')
-            #   extension = ''
-            #   (1..(name_parts.length - 1)).each { |i|
-            #     extension += ('.' + name_parts[i])
-            #   }
-            #   created_file = StoredFile.create(created_application[:id],file[:filename], file[:type], extension)
-            #   if created_file.nil?
-            #     return generate_response('fail', nil, 'ERROR WHILE CREATING FILE OCCURED', SERVER_ERROR_CODE)
-            #   end
-            #   File.open(folder + '/' + created_file[:id].to_s + extension, 'w') do |f|
-            #     f.write(file[:tempfile].read)
-            #   end
-            #   download_link = URL + '/accounts/' + token + '/applications/' + created_application[:id] + '/files/' + created_file[:id].to_s + extension
-            #   StoredFile.update_download_link(created_file[:id], download_link)
-            # end
-            generate_response('ok', { :id => created_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+            application[:files].each do |file_id|
+              StoredFile.set_application_id(file_id, created_application[:id])
+            end
+            generate_response('ok', {:id => created_application[:id]}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'USER DOES NOT EXIST', SERVER_ERROR_CODE)
@@ -142,7 +106,7 @@ CreateApplication
       app.get URL + '/accounts/:token/applications' do
         content_type :json
         skip = validate_skip(params[:skip])
-        limit =  validate_limit(params[:limit])
+        limit = validate_limit(params[:limit])
         token = params[:token]
         resp = is_token_valid(token)
         if resp[:status] == 'ok'
@@ -159,7 +123,7 @@ CreateApplication
               prepare_application(application, token)
             end
             counter = Application.get_users_application_counter(account[:id])
-            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
+            generate_response('ok', {applications: applications, applications_counter: counter}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -170,7 +134,7 @@ CreateApplication
       app.get URL + '/accounts/:token/applications/in_process' do
         content_type :json
         skip = validate_skip(params[:skip])
-        limit =  validate_limit(params[:limit])
+        limit = validate_limit(params[:limit])
         token = params[:token]
         resp = is_token_valid(token)
         if resp[:status] == 'ok'
@@ -184,7 +148,7 @@ CreateApplication
               prepare_application(application, token)
             end
             counter = Application.get_users_application_counter(account[:id])
-            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
+            generate_response('ok', {applications: applications, applications_counter: counter}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -195,7 +159,7 @@ CreateApplication
       app.get URL + '/accounts/:token/applications/rejected' do
         content_type :json
         skip = validate_skip(params[:skip])
-        limit =  validate_limit(params[:limit])
+        limit = validate_limit(params[:limit])
         token = params[:token]
         resp = is_token_valid(token)
         if resp[:status] == 'ok'
@@ -209,7 +173,7 @@ CreateApplication
               prepare_application(application, token)
             end
             counter = Application.get_users_application_counter(account[:id])
-            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
+            generate_response('ok', {applications: applications, applications_counter: counter}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -220,7 +184,7 @@ CreateApplication
       app.get URL + '/accounts/:token/applications/rework' do
         content_type :json
         skip = validate_skip(params[:skip])
-        limit =  validate_limit(params[:limit])
+        limit = validate_limit(params[:limit])
         token = params[:token]
         resp = is_token_valid(token)
         if resp[:status] == 'ok'
@@ -235,7 +199,7 @@ CreateApplication
               prepare_application(application, token)
             end
             counter = Application.get_users_application_counter(account[:id])
-            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
+            generate_response('ok', {applications: applications, applications_counter: counter}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -246,7 +210,7 @@ CreateApplication
       app.get URL + '/accounts/:token/applications/approved' do
         content_type :json
         skip = validate_skip(params[:skip])
-        limit =  validate_limit(params[:limit])
+        limit = validate_limit(params[:limit])
         token = params[:token]
         resp = is_token_valid(token)
         if resp[:status] == 'ok'
@@ -260,51 +224,14 @@ CreateApplication
               prepare_application(application, token)
             end
             counter = Application.get_users_application_counter(account[:id])
-            generate_response('ok', { applications: applications, applications_counter: counter }, nil, SUCCESSFUL_RESPONSE_CODE)
+            generate_response('ok', {applications: applications, applications_counter: counter}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
       end
 
-=begin
-GetApplication
-{
-  status: 'ok',
-  result: {
-    id: 1,
-    type: 'personal',
-    work: [
-      {
-        actor: 1 // uis id
-        activity: {
-          id: 1,
-          title: 'Title',
-          type: 'hourly'
-          category: {
-            id: 1,
-            title: 'Category title'
-          },
-          price: 100
-        },
-        amount: 3,
-        total_price: 300
-      }
-    ],
-    files: [
-      {
-        "filename": "file.jpg",
-        "type": "image/jpeg",
-        "id": "576d13650000000000000000",
-        "download_link": "/points/api/v1/accounts/test/applications/576d13650000000000000000/files/576d13650000000000000000"
-      }
-    ],
-    comment: "Comment",
-    creation_date: "2016-06-24 11:03:01 UTC",
-    status:  "in_process"
-  }
-}
-=end
+# GetApplication
       app.get URL + '/accounts/:token/applications/:application_id' do
         content_type :json
         token = params[:token]
@@ -334,94 +261,6 @@ GetApplication
         end
       end
 
-# GetFile
-      app.get URL + '/accounts/:token/files/:file_id' do
-        content_type :json
-        token = params[:token]
-        file_id = validate_integer(params[:file_id])
-        if file_id.nil?
-          return generate_response('fail', nil, 'WRONG FILE ID', CLIENT_ERROR_CODE)
-        end
-        resp = is_token_valid(token)
-        if resp[:status] == 'ok'
-          account = Account.get_by_owner(resp[:result][:id])
-          if account.nil?
-            return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
-          else
-            file = StoredFile.get_with_author_by_id(file_id)
-            if file.nil?
-              return generate_response('fail', nil, 'FILE DOES NOT EXIST', CLIENT_ERROR_CODE)
-            end
-            if account[:type] == 'admin'
-              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + file_id.to_s + file[:extension]
-              if File.exists?(file_url)
-                send_file file_url, :filename => file[:filename], :type => 'Application/octet-stream'
-              else
-                generate_response('fail', nil, 'FILE DOES NOT EXIST ON SERVER', SERVER_ERROR_CODE)
-              end
-            else
-              unless account[:id] == file[:account_id]
-                return generate_response('fail', nil, 'USER DOES NOT HAVE ACCESS TO THE FILE', SERVER_ERROR_CODE)
-              end
-              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + file_id.to_s + file[:extension]
-              if File.exists?(file_url)
-                send_file file_url, :filename => file[:filename], :type => 'Application/octet-stream'
-              else
-                generate_response('fail', nil, 'FILE DOES NOT EXIST ON SERVER', SERVER_ERROR_CODE)
-              end
-            end
-          end
-        else
-          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
-        end
-      end
-
-# DeleteFile
-      app.delete URL + '/accounts/:token/files/:file_id' do
-        content_type :json
-        token = params[:token]
-        file_id = validate_integer(params[:file_id])
-        if file_id.nil?
-          return generate_response('fail', nil, 'WRONG FILE ID', CLIENT_ERROR_CODE)
-        end
-        resp = is_token_valid(token)
-        if resp[:status] == 'ok'
-          id = resp[:result][:id]
-          account = Account.get_by_owner(id)
-          if account.nil?
-            return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
-          else
-            if account[:type] == 'admin'
-              stored_file = StoredFile.get_with_author_by_id(file_id)
-              if stored_file.nil?
-                return generate_response('fail', nil, 'FILE DOES NOT EXIST', CLIENT_ERROR_CODE)
-              end
-              StoredFile.delete_by_id(file_id)
-              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + stored_file[:account_id].to_s + '/' + stored_file[:application_id].to_s + '/' + file_id.to_s + stored_file[:extension]
-              if File.exists?(file_url)
-                File.delete(file_url)
-              end
-              generate_response('ok', { :description => 'FILE WAS DELETED' }, nil, SUCCESSFUL_RESPONSE_CODE)
-            else
-              stored_file = StoredFile.get_with_author_by_id(file_id)
-              if stored_file.nil?
-                return generate_response('fail', nil, 'FILE DOES NOT EXIST', CLIENT_ERROR_CODE)
-              end
-              unless stored_file[:account_id] == account[:id]
-                return generate_response('fail', nil, 'USER DOES NOT HAVE ACCESS TO THE FILE', CLIENT_ERROR_CODE)
-              end
-              StoredFile.delete_by_id(file_id)
-              file_url = Dir.pwd + '/' + FILES_FOLDER + '/' + stored_file[:account_id].to_s + '/' + stored_file[:application_id].to_s + '/' + file_id.to_s + stored_file[:extension]
-              if File.exists?(file_url)
-                File.delete(file_url)
-              end
-              generate_response('ok', { :description => 'FILE WAS DELETED' }, nil, SUCCESSFUL_RESPONSE_CODE)
-            end
-          end
-        else
-          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
-        end
-      end
 
 # DeleteApplication
       app.delete URL + '/accounts/:token/applications/:application_id' do
@@ -455,27 +294,7 @@ GetApplication
         end
       end
 
-=begin
-UpdateApplication
-{
-  application: {
-    type: 'personal', //'group'
-    work: [
-      {
-        {
-              actor: 1, // id of user in accounts microservice. Has to be the same as id of user with :token if type personal
-              activity_id: 1 // id of activity
-              amount: 3, # null for permanent activities
-          },
-          {
-            ...
-          }
-      }
-    ],
-    comment: ""
-  }
-}
-=end
+      # UpdateApplication
       app.put URL + '/accounts/:token/applications/:application_id' do
         content_type :json
         token = params[:token]
@@ -540,7 +359,10 @@ UpdateApplication
             if application[:comment] != stored_application[:comment]
               Application.update_comment(stored_application[:id], application[:comment])
             end
-            generate_response('ok', { id: stored_application[:id] }, nil, SUCCESSFUL_RESPONSE_CODE)
+            application[:files].each do |file_id|
+              StoredFile.set_application_id(file_id, application_id)
+            end
+            generate_response('ok', {id: stored_application[:id]}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
@@ -570,7 +392,7 @@ UpdateApplication
               return generate_response('fail', nil, 'WRONG STATUS OF THE APPLICATION', CLIENT_ERROR_CODE)
             end
             Application.update_status(application_id, 'in_process')
-            generate_response('ok', { :description => 'application was sent for approval'}, nil, SUCCESSFUL_RESPONSE_CODE)
+            generate_response('ok', {:description => 'application was sent for approval'}, nil, SUCCESSFUL_RESPONSE_CODE)
           end
         else
           generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)

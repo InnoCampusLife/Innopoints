@@ -14,4 +14,12 @@ class Category
     end
     categories
   end
+
+  def self.exists?(id)
+    category = nil
+    DatabaseHandler.connection.query("SELECT * FROM Categories WHERE id = #{id};").each do |row|
+      category = row
+    end
+    !category.nil?
+  end
 end

@@ -25,6 +25,7 @@ class MyApp < Sinatra::Base
   register Applications::User
   register Applications::Admin
   register Applications::General
+  register Applications::FilesHandler
   register Shop::User
   register Shop::Admin
   register Shop::General

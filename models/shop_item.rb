@@ -11,6 +11,32 @@ class ShopItem
     item
   end
 
+  def self.create(title, options, quantity, price, category_id, possible_joint_purchase, max_buyers)
+    title = DatabaseHandler.connection.escape(title)
+    query = "INSERT INTO Items "
+    query << "(title, option1, value1, option2, value2, option3, value3, quantity, price, category_id, possible_joint_purchase, max_buyers, parent, is_deleted) "
+    query << " VALUES ("
+    query << "'#{title}', "
+    counter = 0
+    options.each do |option, value|
+      query << "'#{option}', '#{value}', "
+      counter += 1
+    end
+    (3 - counter).times do
+      query << "NULL, NULL, "
+    end
+    query << "#{quantity}, "
+    query << "#{price}, "
+    query << "#{category_id}, "
+    query << "#{possible_joint_purchase}, "
+    query << "#{max_buyers}, "
+    query << "NULL, 0);"
+    DatabaseHandler.connection.query(query)
+    id = DatabaseHandler.connection.last_id
+    item = get_by_id(id)
+    item
+  end
+
   def self.get_full_info_list(skip, limit, fields_to_sort, order)
     fields = ''
     if fields_to_sort.length == 2
