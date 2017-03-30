@@ -60,3 +60,4 @@ db[:activities].insert_many([
         price: 50
     }
                             ])
+puts 'asd'
