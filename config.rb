@@ -1,5 +1,6 @@
 API_VERSION = 1
 URL = "/api/v#{API_VERSION}/points"
+PUBLIC_FOLDER = '/public'
 FILES_FOLDER = '/public/files'
 ITEMS_IMAGE_FOLDER = '/items'
 MAX_FILE_SIZE = 10000000 # 10Mb

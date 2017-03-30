@@ -59,7 +59,7 @@ class ShopItem
       fields = 'i.' + fields_to_sort[0]
     end
     items = Array.new
-    image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
+    image_link = PUBLIC_FOLDER + ITEMS_IMAGE_FOLDER
     DatabaseHandler.connection.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id = ic.id AND is_deleted=0 ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
       items.push({
           id: row[:id],
@@ -97,7 +97,7 @@ class ShopItem
       fields = fields_to_sort[0]
     end
     items = Array.new
-    image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
+    image_link = PUBLIC_FOLDER + ITEMS_IMAGE_FOLDER
     DatabaseHandler.connection.query("SELECT i.id, i.title, i.price, i.category_id, ic.title as category_name FROM Items as i, ItemCategories as ic WHERE parent is null AND i.category_id=#{category_id} AND i.category_id = ic.id AND is_deleted=0 ORDER BY #{fields} #{order} LIMIT #{skip}, #{limit};").each do |row|
       puts row
       items.push({
@@ -143,7 +143,7 @@ class ShopItem
     result_item = Hash.new
     result_item[:combinations] = Array.new
     parent_item = nil
-    image_link = FILES_FOLDER + ITEMS_IMAGE_FOLDER
+    image_link = PUBLIC_FOLDER + ITEMS_IMAGE_FOLDER
     DatabaseHandler.connection.query("SELECT * FROM Items WHERE id=#{id} AND parent is null AND is_deleted=0;", cast_booleans: true).each do |row|
       parent_item = row
       tmp_value = Hash.new
