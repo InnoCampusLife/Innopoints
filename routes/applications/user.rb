@@ -38,21 +38,21 @@ module Applications
             elsif resp[:result][:role] == 'moderator'
               type = 'admin'
             else
-              generate_response('fail', nil, 'WRONG ROLE', CLIENT_ERROR_CODE)
+              return generate_response('fail', nil, 'WRONG ROLE', CLIENT_ERROR_CODE)
             end
             account = Account.create(owner_id, type)
             if account.nil?
-              generate_response('fail', nil, 'CAN\'T CREATE AN ACCOUNT', SERVER_ERROR_CODE)
+              return generate_response('fail', nil, 'CAN\'T CREATE AN ACCOUNT', SERVER_ERROR_CODE)
             else
               account_info = Account.to_info(account)
               prepare_account(account_info, token)
-              generate_response('ok', account_info, nil, SUCCESSFUL_RESPONSE_CODE)
+              return generate_response('ok', account_info, nil, SUCCESSFUL_RESPONSE_CODE)
             end
           else
-            generate_response('fail', nil, 'ACCOUNT ALREADY EXISTS', CLIENT_ERROR_CODE)
+            return generate_response('fail', nil, 'ACCOUNT ALREADY EXISTS', CLIENT_ERROR_CODE)
           end
         else
-          generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
+          return generate_response('fail', nil, 'ERROR IN ACCOUNTS MICROSERVICE', CLIENT_ERROR_CODE)
         end
       end
 
