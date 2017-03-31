@@ -33,12 +33,13 @@ module Applications
           account = Account.get_by_owner(owner_id)
           if account.nil?
             type = nil
-            if resp[:result][:role] == 'student'
-              type = 'student'
-            elsif resp[:result][:role] == 'moderator'
+            if resp[:result][:role] == 'moderator'
               type = 'admin'
+            # elsif resp[:result][:role] == 'moderator'
+            #   type = 'admin'
             else
-              return generate_response('fail', nil, 'WRONG ROLE', CLIENT_ERROR_CODE)
+              type = 'student' #TODO IS IT RIGHT OR NOT?
+              # return generate_response('fail', nil, 'WRONG ROLE', CLIENT_ERROR_CODE)
             end
             account = Account.create(owner_id, type)
             if account.nil?
