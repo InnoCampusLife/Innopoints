@@ -6,12 +6,6 @@ module Applications
 # UploadFile
       app.post URL + '/accounts/:token/files' do
       # app.post URL + '/files' do
-        content_type :json
-        res = validate_input
-        if res[:status] == 'fail'
-          return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
-        end
-        input = res[:result]
         token = params[:token]
         return generate_response('fail', nil, 'ERROR IN PARAMS', CLIENT_ERROR_CODE) if params.nil? || !params.is_a?(Hash)
         resp = is_token_valid(token)
@@ -20,20 +14,20 @@ module Applications
           if account.nil?
             return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
-            puts '------------params---------------'
-            puts input
-            puts '--------------------------------'
-            files = input[:files]
-            return generate_response('fail', nil, 'FILES CAN NOT BE NULL', CLIENT_ERROR_CODE) if files.nil?
-            files.each do |key, file_data|
-              return generate_response('fail', nil, 'ERROR IN FILE FORMAT', CLIENT_ERROR_CODE) unless file_data.is_a?(Hash)
-              if file_data[:filename].nil? || file_data[:type].nil? || file_data[:name].nil? || file_data[:tempfile].nil? || file_data[:head].nil?
-                return generate_response('fail', nil, 'ERROR IN FILE PARAMETERS', CLIENT_ERROR_CODE)
-              end
-              if File.size(file_data[:tempfile]) > MAX_FILE_SIZE
-                return generate_response('fail', nil, 'MAX FILE SIZE IS 10 MB', CLIENT_ERROR_CODE)
+            files = []
+            params.each do |key, file_data|
+              if file_data.is_a?(Hash)
+                if file_data[:filename].nil? || file_data[:type].nil? || file_data[:name].nil? || file_data[:tempfile].nil? || file_data[:head].nil?
+                  next
+                  # return generate_response('fail', nil, 'ERROR IN FILE PARAMETERS', CLIENT_ERROR_CODE)
+                end
+                if File.size(file_data[:tempfile]) > MAX_FILE_SIZE
+                  return generate_response('fail', nil, 'MAX FILE SIZE IS 10 MB', CLIENT_ERROR_CODE)
+                end
+                files.push({key: file_data})
               end
             end
+            return generate_response('fail', nil, 'THERE ARE NO FILES', CLIENT_ERROR_CODE) if files.length == 0
             result = []
             files.each do |key, file_data|
               file_name = file_data[:filename]
