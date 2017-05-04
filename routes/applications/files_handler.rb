@@ -14,6 +14,9 @@ module Applications
           if account.nil?
             return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
+            puts '------------params---------------'
+            puts params
+            puts '--------------------------------'
             files = params[:files]
             return generate_response('fail', nil, 'FILES CAN NOT BE NULL', CLIENT_ERROR_CODE) if files.nil?
             files.each do |key, file_data|
