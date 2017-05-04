@@ -6,6 +6,12 @@ module Applications
 # UploadFile
       app.post URL + '/accounts/:token/files' do
       # app.post URL + '/files' do
+        content_type :json
+        res = validate_input
+        if res[:status] == 'fail'
+          return generate_response('fail', nil, res[:result], CLIENT_ERROR_CODE)
+        end
+        input = res[:result]
         token = params[:token]
         return generate_response('fail', nil, 'ERROR IN PARAMS', CLIENT_ERROR_CODE) if params.nil? || !params.is_a?(Hash)
         resp = is_token_valid(token)
@@ -15,9 +21,9 @@ module Applications
             return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
             puts '------------params---------------'
-            puts params
+            puts input
             puts '--------------------------------'
-            files = params[:files]
+            files = input[:files]
             return generate_response('fail', nil, 'FILES CAN NOT BE NULL', CLIENT_ERROR_CODE) if files.nil?
             files.each do |key, file_data|
               return generate_response('fail', nil, 'ERROR IN FILE FORMAT', CLIENT_ERROR_CODE) unless file_data.is_a?(Hash)
