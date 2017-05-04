@@ -14,6 +14,9 @@ module Applications
           if account.nil?
             return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
+            puts '-------------PARAMS--------------'
+            puts params
+            puts '---------------------------'
             params.each do |key, file_data|
               if file_data[:filename].nil? || file_data[:type].nil? || file_data[:name].nil? || file_data[:tempfile].nil? || file_data[:head].nil?
                 return generate_response('fail', nil, 'ERROR IN FILE PARAMETERS', CLIENT_ERROR_CODE)
