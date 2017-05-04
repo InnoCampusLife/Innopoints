@@ -2,8 +2,6 @@ class StoredFile
   def self.create(filename, extension)
     DatabaseHandler.connection.query("INSERT INTO Files (id, filename, extension, application_id) VALUES (default, '#{DatabaseHandler.connection.escape(filename)}', '#{DatabaseHandler.connection.escape(extension)}', NULL);")
     id = DatabaseHandler.connection.last_id
-    puts '--------------- STORED FILE ID'
-    puts id
     file = get_by_id(id)
     file
   end
