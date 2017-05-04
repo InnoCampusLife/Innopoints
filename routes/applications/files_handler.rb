@@ -24,12 +24,15 @@ module Applications
                 if File.size(file_data[:tempfile]) > MAX_FILE_SIZE
                   return generate_response('fail', nil, 'MAX FILE SIZE IS 10 MB', CLIENT_ERROR_CODE)
                 end
-                files.push({key: file_data})
+                obj = Hash.new
+                obj[key] = file_data
+                files.push(obj)
               end
             end
             return generate_response('fail', nil, 'THERE ARE NO FILES', CLIENT_ERROR_CODE) if files.length == 0
             result = []
             files.each do |key, file_data|
+              puts file_data
               file_name = file_data[:filename]
               name_parts = file_name.split('.')
               extension = ''
