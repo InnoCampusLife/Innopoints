@@ -14,13 +14,10 @@ module Applications
           if account.nil?
             return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
-            puts '-------------PARAMS--------------'
-            puts params
-            puts '---------------------------'
-            params.each do |key, file_data|
-              puts 'FILE DATA'
-              puts file_data
-              puts '-------------------------'
+            files = params[:files]
+            return generate_response('fail', nil, 'FILES CAN NOT BE NULL', CLIENT_ERROR_CODE) if files.nil?
+            files.each do |key, file_data|
+              return generate_response('fail', nil, 'ERROR IN FILE FORMAT', CLIENT_ERROR_CODE) unless file_data.is_a?(Hash)
               if file_data[:filename].nil? || file_data[:type].nil? || file_data[:name].nil? || file_data[:tempfile].nil? || file_data[:head].nil?
                 return generate_response('fail', nil, 'ERROR IN FILE PARAMETERS', CLIENT_ERROR_CODE)
               end
@@ -29,7 +26,7 @@ module Applications
               end
             end
             result = []
-            params.each do |key, file_data|
+            files.each do |key, file_data|
               file_name = file_data[:filename]
               name_parts = file_name.split('.')
               extension = ''
