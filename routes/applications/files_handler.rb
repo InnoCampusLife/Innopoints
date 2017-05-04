@@ -14,7 +14,7 @@ module Applications
           if account.nil?
             return generate_response('fail', nil, 'ACCOUNT DOES NOT EXIST', CLIENT_ERROR_CODE)
           else
-            files = []
+            files = Hash.new
             params.each do |key, file_data|
               if file_data.is_a?(Hash)
                 if file_data[:filename].nil? || file_data[:type].nil? || file_data[:name].nil? || file_data[:tempfile].nil? || file_data[:head].nil?
@@ -24,15 +24,12 @@ module Applications
                 if File.size(file_data[:tempfile]) > MAX_FILE_SIZE
                   return generate_response('fail', nil, 'MAX FILE SIZE IS 10 MB', CLIENT_ERROR_CODE)
                 end
-                obj = Hash.new
-                obj[key] = file_data
-                files.push(obj)
+                files[key] = file_data
               end
             end
             return generate_response('fail', nil, 'THERE ARE NO FILES', CLIENT_ERROR_CODE) if files.length == 0
             result = []
             files.each do |key, file_data|
-              puts file_data
               file_name = file_data[:filename]
               name_parts = file_name.split('.')
               extension = ''
