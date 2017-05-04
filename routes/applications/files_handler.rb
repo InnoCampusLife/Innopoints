@@ -38,7 +38,9 @@ module Applications
                   extension += ('.' + name_parts[i])
                 }
               end
+              puts 'BEFORE FILE CREATION'
               created_file = StoredFile.create(file_name, extension)
+              puts 'AFTER FILE CREATION'
               folder = Dir.pwd + FILES_FOLDER
               unless File.directory?(folder)
                 FileUtils::mkdir_p(folder)
