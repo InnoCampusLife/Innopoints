@@ -18,6 +18,9 @@ module Applications
             puts params
             puts '---------------------------'
             params.each do |key, file_data|
+              puts 'FILE DATA'
+              puts file_data
+              puts '-------------------------'
               if file_data[:filename].nil? || file_data[:type].nil? || file_data[:name].nil? || file_data[:tempfile].nil? || file_data[:head].nil?
                 return generate_response('fail', nil, 'ERROR IN FILE PARAMETERS', CLIENT_ERROR_CODE)
               end
